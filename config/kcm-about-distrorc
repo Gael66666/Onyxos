@@ -1,0 +1,9 @@
+[General]
+Name=OnyxOS
+Version=1.0 (Plasma Edition)
+LogoPath=/usr/share/pixmaps/onyxos-logo.svg
+Website=https://onyxos.internal
+SupportUrl=https://onyxos.internal/support
+PrivacyPolicyUrl=https://onyxos.internal/privacy
+DocumentationUrl=https://onyxos.internal/docs
+BugReportUrl=https://onyxos.internal/bugs

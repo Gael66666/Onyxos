@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=OnyxOS Dark Purple
+Description=OnyxOS 1.0 Boot Splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/onyxos
+ScriptFile=/usr/share/plymouth/themes/onyxos/onyxos.script

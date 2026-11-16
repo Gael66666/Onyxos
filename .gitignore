@@ -1,0 +1,9 @@
+*.iso
+*.iso.bak
+*.ppm
+*.log
+*.fd
+vga.bin
+work/
+screen1.png
+boot_progress.png

@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=OnyxOS
+Description=OnyxOS 1.0 KDE Plasma Login Greeter
+Author=OnyxOS Team
+Theme-Id=onyxos
+Theme-API=2.0
+Website=https://onyxos.internal
+License=GPL
+Type=sddm-theme
+ConfigFile=theme.conf
+MainScript=Main.qml
