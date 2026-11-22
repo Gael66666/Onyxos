@@ -15,7 +15,7 @@ import os
 import sys
 import math
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 OUTPUT_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = OUTPUT_DIR.parent
@@ -102,7 +102,7 @@ def create_svg_logo(output_path: Path):
         fill="#EDE9FE" letter-spacing="8">ONYXOS</text>
 </svg>
 """
-    with open(output_path, "w", encoding="utf-8") as f:
+    with open(output_path, "w", encoding="utf-8", newline="\n") as f:
         f.write(svg_content)
     print(f"[OK] Generated SVG logo: {output_path}")
 
@@ -223,48 +223,142 @@ def generate_wallpaper(output_path: Path, width=1920, height=1080):
     img.save(output_path, "PNG", optimize=True)
     print(f"[OK] Generated Wallpaper: {output_path}")
 
+FONT_CANDIDATES = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+    "C:/Windows/Fonts/segoeuib.ttf",
+    "C:/Windows/Fonts/arialbd.ttf",
+]
+
+
+def load_font(size: int):
+    """Loads a bold font for the OnyxOS wordmark, with a safe fallback."""
+    for candidate in FONT_CANDIDATES:
+        if os.path.isfile(candidate):
+            try:
+                return ImageFont.truetype(candidate, size)
+            except OSError:
+                continue
+    try:
+        return ImageFont.load_default(size)
+    except TypeError:
+        return ImageFont.load_default()
+
+
+def generate_plymouth_watermark(output_path: Path):
+    """Transparent OnyxOS wordmark used as the Plymouth watermark."""
+    width, height = 460, 132
+    img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    render_gemstone(draw, 66, height // 2, 50)
+
+    font = load_font(46)
+    text = "ONYXOS"
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    draw.text(
+        (150, (height - (bbox[3] - bbox[1])) // 2 - bbox[1]),
+        text,
+        font=font,
+        fill=COLOR_TEXT_LIGHT,
+    )
+    draw.text((150 + text_w + 12, height // 2 - 12), "1.0", font=load_font(18), fill=COLOR_VIOLET_3)
+    img.save(output_path, "PNG")
+    print(f"[OK] Generated Plymouth watermark: {output_path}")
+
+
+def generate_plymouth_background(output_path: Path, width=1920, height=1080):
+    """Dark OnyxOS gradient used behind the Plymouth watermark."""
+    img = Image.new("RGB", (width, height), COLOR_DEEP_BLACK)
+    draw = ImageDraw.Draw(img)
+    for y in range(height):
+        t = y / height
+        draw.line(
+            [(0, y), (width, y)],
+            fill=(
+                int(11 + t * 10),
+                int(10 + t * 9),
+                int(16 + t * 16),
+            ),
+        )
+    glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow)
+    radius = int(min(width, height) * 0.45)
+    glow_draw.ellipse(
+        [width // 2 - radius, height // 2 - radius, width // 2 + radius, height // 2 + radius],
+        fill=(139, 92, 246, 38),
+    )
+    glow = glow.filter(ImageFilter.GaussianBlur(120))
+    img.paste(glow, (0, 0), glow)
+    draw = ImageDraw.Draw(img)
+    draw.rectangle([0, height - 4, width, height], fill=COLOR_VIOLET_1)
+    img.save(output_path, "PNG", optimize=True)
+    print(f"[OK] Generated Plymouth background: {output_path}")
+
+
+def generate_plymouth_throbber(output_dir: Path, frames=24, size=64):
+    """Rotating electric-violet arc used by Plymouth's two-step throbber."""
+    for index in range(frames):
+        img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        start = (index * 360) // frames
+        box = [8, 8, size - 8, size - 8]
+        draw.arc(box, start, start + 250, fill=COLOR_VIOLET_1 + (255,), width=7)
+        draw.arc(box, start + 250, start + 320, fill=COLOR_VIOLET_3 + (255,), width=7)
+        angle = math.radians(start)
+        cx = size / 2 + (size / 2 - 12) * math.cos(angle)
+        cy = size / 2 + (size / 2 - 12) * math.sin(angle)
+        draw.ellipse([cx - 4, cy - 4, cx + 4, cy + 4], fill=COLOR_TEXT_LIGHT + (255,))
+        img.save(output_dir / f"throbber-{index + 1:04d}.png", "PNG")
+    print(f"[OK] Generated {frames} Plymouth throbber frames")
+
+
 def generate_plymouth_theme(output_dir: Path):
-    """Generates Plymouth boot theme configuration and splash assets."""
+    """Generates the Plymouth two-step theme (the script plugin is not in the image)."""
     plymouth_dir = output_dir / "plymouth" / "onyxos"
+    if plymouth_dir.exists():
+        for stale in plymouth_dir.iterdir():
+            if stale.is_file():
+                stale.unlink()
     plymouth_dir.mkdir(parents=True, exist_ok=True)
 
-    # Plymouth config
     plymouth_conf = """[Plymouth Theme]
-Name=OnyxOS Dark Purple
-Description=OnyxOS 1.0 Boot Splash
-ModuleName=script
+Name=OnyxOS
+Description=OnyxOS 1.0 boot splash
+ModuleName=two-step
 
-[script]
+[two-step]
 ImageDir=/usr/share/plymouth/themes/onyxos
-ScriptFile=/usr/share/plymouth/themes/onyxos/onyxos.script
+ScaleBackgroundImage=true
+UseFirmwareBackground=false
+BackgroundStartColor=0x0B0A10
+BackgroundEndColor=0x151320
+ProgressBarBackgroundColor=0x1E1B2E
+ProgressBarForegroundColor=0x8B5CF6
+ProgressBarHorizontalAlignment=.5
+ProgressBarVerticalAlignment=.86
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.46
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.34
+Font=Cantarell 12
+TitleFont=Cantarell Light 30
+MessageBelowAnimation=true
+
+[boot-up]
+UseEndAnimation=false
+UseProgressBar=true
+
+[shutdown]
+UseEndAnimation=false
 """
-    with open(plymouth_dir / "onyxos.plymouth", "w", encoding="utf-8") as f:
+    with open(plymouth_dir / "onyxos.plymouth", "w", encoding="utf-8", newline="\n") as f:
         f.write(plymouth_conf)
 
-    # Plymouth script
-    plymouth_script = """# OnyxOS Plymouth Theme Script
-Window.SetBackgroundTopColor(0.043, 0.039, 0.063); # #0B0A10
-Window.SetBackgroundBottomColor(0.082, 0.075, 0.125); # #151320
-
-logo.image = Image("splash-logo.png");
-logo.sprite = Sprite(logo.image);
-logo.opacity = 1.0;
-
-logo.x = Window.GetX() + Window.GetWidth() / 2 - logo.image.GetWidth() / 2;
-logo.y = Window.GetY() + Window.GetHeight() / 2 - logo.image.GetHeight() / 2;
-logo.sprite.SetPosition(logo.x, logo.y, 10);
-
-progress = 0;
-fun refresh_callback () {
-    progress++;
-}
-Plymouth.SetRefreshFunction(refresh_callback);
-"""
-    with open(plymouth_dir / "onyxos.script", "w", encoding="utf-8") as f:
-        f.write(plymouth_script)
-
-    # Generate splash logo (256x256)
-    generate_logo_png(plymouth_dir / "splash-logo.png", size=256)
+    generate_plymouth_background(plymouth_dir / "background.png")
+    generate_plymouth_watermark(plymouth_dir / "watermark.png")
+    generate_plymouth_throbber(plymouth_dir)
     print(f"[OK] Generated Plymouth theme in: {plymouth_dir}")
 
 def generate_sddm_theme(output_dir: Path):
@@ -284,7 +378,7 @@ Type=sddm-theme
 ConfigFile=theme.conf
 MainScript=Main.qml
 """
-    with open(sddm_dir / "metadata.desktop", "w", encoding="utf-8") as f:
+    with open(sddm_dir / "metadata.desktop", "w", encoding="utf-8", newline="\n") as f:
         f.write(metadata)
 
     theme_conf = """[General]
@@ -296,7 +390,7 @@ font=Noto Sans
 headerColor=#8B5CF6
 accentColor=#A855F7
 """
-    with open(sddm_dir / "theme.conf", "w", encoding="utf-8") as f:
+    with open(sddm_dir / "theme.conf", "w", encoding="utf-8", newline="\n") as f:
         f.write(theme_conf)
 
     # SDDM Background

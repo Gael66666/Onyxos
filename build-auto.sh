@@ -56,22 +56,19 @@ log_info "Step 2: Generating visual assets (wallpapers, logos, themes)..."
 "${PYTHON_BIN}" "${SCRIPT_DIR}/assets/generate_assets.py"
 log_ok "Assets generated successfully."
 
-# Step 3: Brand Sanitization Audit
-log_info "Step 3: Auditing Kickstart and configs for branding compliance..."
-FORBIDDEN_TERMS=("fedora" "Fedora" "FEDORA")
+# Step 3: Brand Sanitization Audit (read-only)
+log_info "Step 3: Auditing configs for branding compliance..."
 AUDIT_TARGETS=("${SCRIPT_DIR}/config/os-release" "${SCRIPT_DIR}/config/kcm-about-distrorc")
 
 for target in "${AUDIT_TARGETS[@]}"; do
     if [ -f "${target}" ]; then
-        # Check PRETTY_NAME and NAME specifically
-        if grep -E "^(NAME|PRETTY_NAME|VARIANT)=.*Fedora" "${target}" >/dev/null 2>&1; then
-            log_err "Violation: Upstream brand detected in ${target}!"
-            sed -i 's/Fedora/OnyxOS/g' "${target}"
-            log_ok "Sanitized brand in ${target}"
+        if grep -Eq "^(NAME|PRETTY_NAME|VARIANT)=.*Fedora|^ID=fedora" "${target}"; then
+            log_err "Violation: upstream brand detected in ${target}!"
+            exit 1
         fi
     fi
 done
-log_ok "Branding audit passed: All user-facing identities set to OnyxOS."
+log_ok "Branding audit passed: all user-facing identities set to OnyxOS."
 
 # Step 4: Kickstart Validation
 log_info "Step 4: Validating Kickstart file: onyxos-kde.ks..."
@@ -94,22 +91,10 @@ else
 fi
 
 # Step 5: ISO Creation
-ISO_NAME="onyxos-1.0-x86_64.iso"
-OUTPUT_DIR="${SCRIPT_DIR}/build-output"
-mkdir -p "${OUTPUT_DIR}"
+ISO_NAME="OnyxOS-1.0-live-x86_64.iso"
 
-log_info "Step 5: Packaging OnyxOS Live ISO image (${ISO_NAME})..."
-
-if command -v livemedia-creator &>/dev/null; then
-    log_info "Running livemedia-creator..."
-    livemedia-creator --ks="${KS_FILE}" --no-virt --resultdir="${OUTPUT_DIR}" --project="OnyxOS" --releasever=41
-    if [ -f "${OUTPUT_DIR}/images/boot.iso" ]; then
-        mv "${OUTPUT_DIR}/images/boot.iso" "${SCRIPT_DIR}/${ISO_NAME}"
-    fi
-elif [ -f "${SCRIPT_DIR}/build_iso.py" ]; then
-    log_info "Invoking portable ISO generator: build_iso.py..."
-    "${PYTHON_BIN}" "${SCRIPT_DIR}/build_iso.py"
-fi
+log_info "Step 5: Building ${ISO_NAME} from the bundled Fedora KDE live ISO..."
+"${PYTHON_BIN}" "${SCRIPT_DIR}/build_iso.py"
 
 if [ -f "${SCRIPT_DIR}/${ISO_NAME}" ]; then
     log_ok "Target ISO successfully created: ${SCRIPT_DIR}/${ISO_NAME}"

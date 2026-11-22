@@ -1,0 +1,25 @@
+=== OnyxOS 1.0 - preuve de demarrage (QEMU, ISO finale) ===
+
+[GRUB]
+Booting 'Start OnyxOS 1.0 (Plasma Edition)'
+(voir screenshots/grub-boot.png)
+
+[Console serie - fin de boot]
+OnyxOS 1.0 7.2.11-300.fc45.x86_64 (ttyS0)
+Activate the web console with: systemctl enable --now cockpit.socket
+
+onyxos login:
+
+[Session graphique - etat capture via la console root]
+loginctl : 3  1000  liveuser  seat0  tty1  user  active
+processus : /usr/bin/startplasma-wayland
+            /usr/bin/kwin_wayland --wayland-fd 7 --socket wayland-1 --xwayland
+            /usr/bin/plasmashell --no-respawn
+services  : plasmalogin.service (PID 1421), plasma-kwin_wayland.service,
+            plasma-plasmashell.service, plasma-ksmserver.service
+
+[Note]
+Sous QEMU TCG sans GPU/virgl, le compositeur Wayland demarre mais le
+framebuffer reste noir (le GPU emule n'expose pas d'EGL utilisable).
+Le login et la session sont actifs ; le rendu doit etre verifie sur du
+materiel reel ou avec un GPU virtuel virgl.

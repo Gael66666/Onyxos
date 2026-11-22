@@ -1,12 +1,13 @@
 import QtQuick 2.15
+import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import SddmComponents 2.0
 
 Rectangle {
     id: root
-    width: 1920
-    height: 1080
+    width: Screen.width
+    height: Screen.height
     color: "#0B0A10"
 
     Image {
@@ -28,7 +29,7 @@ Rectangle {
         spacing: 18
 
         Image {
-            source: "../../../../pixmaps/onyxos-logo.png"
+            source: "../../../pixmaps/onyxos-logo.png"
             Layout.alignment: Qt.AlignHCenter
             Layout.preferredWidth: 116
             Layout.preferredHeight: 116

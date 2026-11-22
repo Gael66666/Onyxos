@@ -1,8 +1,29 @@
 [Plymouth Theme]
-Name=OnyxOS Dark Purple
-Description=OnyxOS 1.0 Boot Splash
-ModuleName=script
+Name=OnyxOS
+Description=OnyxOS 1.0 boot splash
+ModuleName=two-step
 
-[script]
+[two-step]
 ImageDir=/usr/share/plymouth/themes/onyxos
-ScriptFile=/usr/share/plymouth/themes/onyxos/onyxos.script
+ScaleBackgroundImage=true
+UseFirmwareBackground=false
+BackgroundStartColor=0x0B0A10
+BackgroundEndColor=0x151320
+ProgressBarBackgroundColor=0x1E1B2E
+ProgressBarForegroundColor=0x8B5CF6
+ProgressBarHorizontalAlignment=.5
+ProgressBarVerticalAlignment=.86
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.46
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.34
+Font=Cantarell 12
+TitleFont=Cantarell Light 30
+MessageBelowAnimation=true
+
+[boot-up]
+UseEndAnimation=false
+UseProgressBar=true
+
+[shutdown]
+UseEndAnimation=false

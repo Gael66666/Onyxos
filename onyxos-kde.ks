@@ -24,8 +24,8 @@ clearpart --all --initlabel
 part / --size=16384 --fstype=ext4 --label=onyxos-root
 
 # Repositories (Fedora base & updates for package resolution)
-repo --name=fedora --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-41&arch=x86_64
-repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f41&arch=x86_64
+repo --name=fedora --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-45&arch=x86_64
+repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f45&arch=x86_64
 
 # ==============================================================================
 # Package Manifest
@@ -113,7 +113,7 @@ ID=onyxos
 ID_LIKE="fedora"
 VERSION_ID="1.0"
 VERSION_CODENAME="Obsidian"
-PRETTY_NAME="OnyxOS 1.0 (Plasma Edition)"
+PRETTY_NAME="OnyxOS 1.0"
 ANSI_COLOR="0;35"
 LOGO="onyxos-logo"
 CPE_NAME="cpe:/o:onyxos:onyxos:1.0"
