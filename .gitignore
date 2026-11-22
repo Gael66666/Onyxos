@@ -17,3 +17,7 @@ fedora-kde-boot.log
 
 __pycache__/
 *.pyc
+
+*.iso
+*.sha256
+AGENTS.md
