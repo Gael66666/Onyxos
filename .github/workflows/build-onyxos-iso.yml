@@ -1,0 +1,127 @@
+name: Build and Release OnyxOS ISO
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'repo-updates/**'
+      - '.github/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-iso:
+    name: Build OnyxOS 2.0 Live ISO
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free disk space on runner
+        run: |
+          echo "=== Espace disque initial ==="
+          df -h
+          echo "Suppression des paquets et caches volumineux..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /var/lib/docker
+          sudo apt-get clean
+          echo "=== Espace disque libéré ==="
+          df -h
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            xorriso \
+            erofs-utils \
+            squashfs-tools \
+            python3 \
+            python3-pil \
+            curl \
+            rpm \
+            createrepo-c \
+            zip
+
+      - name: Download official Fedora KDE Live 45 source ISO
+        run: |
+          ISO_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/45/KDE/x86_64/iso/Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso"
+          echo "Téléchargement de l'ISO source officielle..."
+          curl -fL -C - --retry 5 --retry-delay 5 -o Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso "$ISO_URL"
+          ls -lh Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso
+
+      - name: Rebuild OnyxOS Live ISO
+        run: |
+          chmod +x rebuild-live-iso.sh scripts/*.sh assets/generate_assets.py
+          sudo ONYXOS_REGEN_ASSETS=1 ./rebuild-live-iso.sh
+          if [ -f OnyxOS-1.0-live-x86_64.iso ]; then
+            mv -f OnyxOS-1.0-live-x86_64.iso OnyxOS-2.0-live-x86_64.iso
+          fi
+          sha256sum OnyxOS-2.0-live-x86_64.iso > OnyxOS-2.0-live-x86_64.iso.sha256
+          echo "ISO prête :"
+          ls -lh OnyxOS-2.0-live-x86_64.iso*
+          cat OnyxOS-2.0-live-x86_64.iso.sha256
+
+      - name: Split ISO into multi-volume ZIP (< 2GB per part)
+        run: |
+          echo "Découpage de l'ISO en volumes ZIP de 1900 Mo (mode Store -0)..."
+          zip -0 -s 1900m OnyxOS-2.0-live-x86_64.zip OnyxOS-2.0-live-x86_64.iso
+          echo "Volumes créés :"
+          ls -lh OnyxOS-2.0-live-x86_64.z* OnyxOS-2.0-live-x86_64.zip
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.0-latest
+          name: "OnyxOS 2.0 (Plasma Edition) Live ISO"
+          body: |
+            ## OnyxOS 2.0 (Plasma Edition) — Release Automatique Cloud
+
+            Bienvenue sur la version officielle d'**OnyxOS 2.0** (Plasma Edition), basée sur Fedora 45 et optimisée pour la performance et le jeu !
+
+            ### ✨ Points forts :
+            - **Bureau KDE repensé** : Barre supérieure fine (28 px) + dock flottant centré en bas (64 px).
+            - **Pack d'icônes OnyxIcons** : Dossiers et applications personnalisés noir et violet électrique.
+            - **Fastfetch** : Logo ASCII OnyxOS violet à l'ouverture de Konsole.
+            - **Performance extrême** : Ordonnancement basse latence (`preempt=full`), zram en `zstd`, sysctl optimisé (`vm.swappiness=10`).
+            - **Compatibilité Windows (.exe)** : Wine, Winetricks, Vulkan et association automatique `.exe`.
+            - **Firefox propre** : Zéro favori sponsorisé, page d'accueil personnalisée, langue française.
+            - **Système de mise à jour** : Connecté au dépôt officiel GitHub (`https://gael66666.github.io/Onyxos/repo-updates/`).
+
+            ---
+
+            ### 📦 Instructions pour décompresser l'ISO :
+            L'image ISO est découpée en volumes multi-parties `< 2 Go` compatibles avec GitHub Releases :
+            - `OnyxOS-2.0-live-x86_64.z01`
+            - `OnyxOS-2.0-live-x86_64.zip`
+
+            #### Sous Windows (avec 7-Zip ou WinRAR) :
+            1. Téléchargez tous les fichiers `.z01`, `.z02`... et `.zip` dans le **même dossier**.
+            2. Faites un clic droit sur `OnyxOS-2.0-live-x86_64.zip` → **7-Zip** → **Extraire ici**.
+            3. Vous obtenez directement `OnyxOS-2.0-live-x86_64.iso`.
+
+            #### Sous Linux / macOS :
+            ```bash
+            # Fusionner les volumes en une archive unique puis extraire
+            zip -s 0 OnyxOS-2.0-live-x86_64.zip --out OnyxOS-2.0-single.zip
+            unzip OnyxOS-2.0-single.zip
+            # Vérifier la somme de contrôle SHA256
+            sha256sum -c OnyxOS-2.0-live-x86_64.iso.sha256
+            ```
+          files: |
+            OnyxOS-2.0-live-x86_64.zip
+            OnyxOS-2.0-live-x86_64.z*
+            OnyxOS-2.0-live-x86_64.iso.sha256
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

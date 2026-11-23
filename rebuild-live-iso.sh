@@ -982,16 +982,31 @@ fi
 ok "GRUB rebrandé — mode VMware/hardware (quiet rhgb preempt=full)."
 
 # ==============================================================================
-# Scellage de l'ISO
+# Scellage de l'ISO (compacte ~3,5 Go, sans blocs résiduels de la source)
 # ==============================================================================
-log "Étape 9b/9 : scellage de l'ISO OnyxOS"
+log "Étape 9b/9 : scellage de l'ISO OnyxOS (image compacte avec BIOS + UEFI El Torito)"
 rm -f "$WORK_ISO"
-xorriso -indev "$SOURCE_ISO" -outdev "$WORK_ISO" \
-    -boot_image any replay \
-    -map "$ISO_TREE/LiveOS/squashfs.img"           /LiveOS/squashfs.img \
-    -map "$ISO_TREE/boot/x86_64/loader/initrd"     /boot/x86_64/loader/initrd \
-    -map "$GRUB_CONFIG"                             /boot/grub2/grub.cfg \
-    -volid "ONYXOS_KDE_LIVE" -commit
+
+# Utilise mkisofs via xorriso pour créer une ISO neuve à partir de ISO_TREE
+# sans conserver les blocs inutilisés ou réécrits de l'ISO source.
+xorriso -as mkisofs \
+    -iso-level 3 \
+    -full-iso9660-filenames \
+    -volid "ONYXOS_KDE_LIVE" \
+    --grub2-mbr --interval:local_fs:0s-15s:zero_mbrpt,zero_gpt:"$SOURCE_ISO" \
+    --protective-msdos-label \
+    -partition_cyl_align off \
+    -partition_offset 16 \
+    -append_partition 2 28732ac11ff8d211ba4b00a0c93ec93b --interval:local_fs:6859596d-6921035d::"$SOURCE_ISO" \
+    -appended_part_as_gpt \
+    -iso_mbr_part_type a2a0d0ebe5b9334487c068b6b72699c7 \
+    -b boot/x86_64/loader/eltorito.img \
+    -no-emul-boot -boot-load-size 4 -boot-info-table --grub2-boot-info \
+    -eltorito-alt-boot \
+    -e '--interval:appended_partition_2_start_1714899s_size_61440d:all::' \
+    -no-emul-boot -boot-load-size 61440 \
+    -o "$WORK_ISO" \
+    "$ISO_TREE"
 [[ -s "$WORK_ISO" ]] || die "xorriso n'a pas produit d'ISO."
 [[ $(stat -c%s "$WORK_ISO") -gt 1000000000 ]] || die "ISO générée trop petite."
 
