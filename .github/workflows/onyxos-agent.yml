@@ -1,0 +1,46 @@
+name: OnyxOS Agent 24/7
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  run-agent:
+    # Sécurité : obéit UNIQUEMENT à votre compte Gael66666
+    if: github.event.issue.user.login == 'Gael66666'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - name: Récupérer le dépôt OnyxOS
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js et Gemini CLI
+        run: npm install -g @google/gemini-cli
+
+      - name: Exécuter la demande avec Gemini CLI
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          gemini -p "Tu es l'agent autonome d'OnyxOS. Applique la demande suivante sur le dépôt : ${{ github.event.issue.title }} - ${{ github.event.issue.body }}" --yolo
+
+      - name: Sauvegarder les modifications sur GitHub
+        run: |
+          git config user.name "OnyxOS-Bot"
+          git config user.email "bot@onyxos.local"
+          git add -A
+          git commit -m "Auto-update via Issue #${{ github.event.issue.number }}" || exit 0
+          git push
+
+      - name: Répondre sur l'Issue une fois terminé
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "✅ Modification appliquée et poussée sur le dépôt par l'agent OnyxOS !"
+            })
