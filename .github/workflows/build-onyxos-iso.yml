@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-iso:
-    name: Build OnyxOS 2.0 Live ISO
+    name: Build OnyxOS 2.1 Live ISO
     runs-on: ubuntu-latest
 
     steps:
@@ -25,7 +25,7 @@ jobs:
         run: |
           echo "=== Espace disque initial ==="
           df -h
-          echo "Suppression des paquets et caches volumineux..."
+          echo "Suppression des paquets volumineux préinstallés..."
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
@@ -56,7 +56,7 @@ jobs:
       - name: Download official Fedora KDE Live 45 source ISO
         run: |
           ISO_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/45/KDE/x86_64/iso/Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso"
-          echo "Téléchargement de l'ISO source officielle..."
+          echo "Téléchargement de l'ISO source officielle Fedora 45 KDE..."
           curl -fL -C - --retry 5 --retry-delay 5 -o Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso "$ISO_URL"
           ls -lh Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso
 
@@ -64,65 +64,72 @@ jobs:
         run: |
           sudo modprobe fuse 2>/dev/null || true
           chmod +x rebuild-live-iso.sh scripts/*.sh assets/generate_assets.py
-          sudo ONYXOS_REGEN_ASSETS=1 ./rebuild-live-iso.sh
-          if [ -f OnyxOS-1.0-live-x86_64.iso ]; then
-            mv -f OnyxOS-1.0-live-x86_64.iso OnyxOS-2.0-live-x86_64.iso
-          fi
-          sha256sum OnyxOS-2.0-live-x86_64.iso > OnyxOS-2.0-live-x86_64.iso.sha256
-          echo "ISO prête :"
-          ls -lh OnyxOS-2.0-live-x86_64.iso*
-          cat OnyxOS-2.0-live-x86_64.iso.sha256
+          sudo ONYXOS_REGEN_ASSETS=1 bash ./rebuild-live-iso.sh
+          # Assurer les permissions pour l'étape zip non-root
+          sudo chown -R $USER:$USER .
+          chmod 666 OnyxOS-*.iso* 2>/dev/null || true
+          echo "Fichiers ISO générés :"
+          ls -lh OnyxOS-*.iso*
+          cat OnyxOS-2.1-live-x86_64.iso.sha256
 
       - name: Split ISO into multi-volume ZIP (< 2GB per part)
         run: |
-          echo "Découpage de l'ISO en volumes ZIP de 1900 Mo (mode Store -0)..."
-          zip -0 -s 1900m OnyxOS-2.0-live-x86_64.zip OnyxOS-2.0-live-x86_64.iso
+          echo "Découpage de l'ISO en volumes ZIP de 1900 Mo (mode Store -0 instantané)..."
+          zip -0 -s 1900m OnyxOS-2.1-live-x86_64.zip OnyxOS-2.1-live-x86_64.iso
           echo "Volumes créés :"
-          ls -lh OnyxOS-2.0-live-x86_64.z* OnyxOS-2.0-live-x86_64.zip
+          ls -lh OnyxOS-2.1-live-x86_64.z* OnyxOS-2.1-live-x86_64.zip
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.0-latest
-          name: "OnyxOS 2.0 (Plasma Edition) Live ISO"
+          tag_name: v2.1-latest
+          name: "OnyxOS 2.1 (Plasma Edition) Live ISO"
           body: |
-            ## OnyxOS 2.0 (Plasma Edition) — Release Automatique Cloud
+            ## OnyxOS 2.1 (Plasma Edition) — Release Officielle Cloud
 
-            Bienvenue sur la version officielle d'**OnyxOS 2.0** (Plasma Edition), basée sur Fedora 45 et optimisée pour la performance et le jeu !
+            Bienvenue sur **OnyxOS 2.1** (Plasma Edition) ! Cette version apporte une refonte visuelle complète sans aucun flou ("Obsidian Matte & Electric Violet"), des performances de pointe, des mises à jour DNF ultra-rapides sans freeze et une prise en charge multimédia/jeux complète.
 
-            ### ✨ Points forts :
-            - **Bureau KDE repensé** : Barre supérieure fine (28 px) + dock flottant centré en bas (64 px).
-            - **Pack d'icônes OnyxIcons** : Dossiers et applications personnalisés noir et violet électrique.
-            - **Fastfetch** : Logo ASCII OnyxOS violet à l'ouverture de Konsole.
-            - **Performance extrême** : Ordonnancement basse latence (`preempt=full`), zram en `zstd`, sysctl optimisé (`vm.swappiness=10`).
-            - **Compatibilité Windows (.exe)** : Wine, Winetricks, Vulkan et association automatique `.exe`.
-            - **Firefox propre** : Zéro favori sponsorisé, page d'accueil personnalisée, langue française.
-            - **Système de mise à jour** : Connecté au dépôt officiel GitHub (`https://gael66666.github.io/Onyxos/repo-updates/`).
+            ### ✨ Nouveautés de la v2.1 :
+            - **Design KDE Plasma 6 "Obsidian Matte" (ZÉRO FLOU)** :
+              - Fenêtres épurées sans bordures latérales via `OnyxAurorae`.
+              - Thème Plasma SVG `OnyxTheme` noir profond mat (`#0F0D18`) opaque à 95 % avec fine bordure violette `#8B5CF6`.
+              - Barre supérieure 28 px flottante & dock centré 62 px flottant avec lanceurs épinglés.
+              - Konsole noir mat `#0D0B14` sans flou avec police `JetBrains Mono`.
+              - Flou KWin entièrement désactivé pour un rendu ultra-net et réactif.
+            - **Mises à jour DNF ultra-rapides & Zéro Freeze** :
+              - 10 téléchargements simultanés (`max_parallel_downloads=10`, `fastestmirror=True`).
+              - Hook DNF5 transparent qui laisse passer 100 % des mises à jour Fedora sans conflit de paquets.
+              - Raccourci `onyxos-update` (`sudo dnf upgrade --refresh -y`).
+            - **Multimédia & Jeux clés en main** :
+              - Dépôts RPM Fusion Free & Nonfree activés avec codecs complets (`ffmpeg`, GStreamer, VA-API).
+              - Flathub préconfiguré pour KDE Discover.
+              - Wine, Winetricks, Gamemode, Vulkan et association automatique `.exe`.
+            - **Système, Sécurité & Vie Privée** :
+              - Noyau basse latence `preempt=full`, swap zram en `zstd`, `vm.max_map_count=2147483642`, congestion TCP BBR.
+              - DNS Cloudflare/Quad9 dans `systemd-resolved`, `fstrim.timer` activé et télémétrie Firefox désactivée.
 
             ---
 
-            ### 📦 Instructions pour décompresser l'ISO :
-            L'image ISO est découpée en volumes multi-parties `< 2 Go` compatibles avec GitHub Releases :
-            - `OnyxOS-2.0-live-x86_64.z01`
-            - `OnyxOS-2.0-live-x86_64.zip`
+            ### 📦 Téléchargement & Extraction de l'ISO :
+            L'image ISO est découpée en volumes multi-parties `< 2 Go` :
+            - `OnyxOS-2.1-live-x86_64.z01`
+            - `OnyxOS-2.1-live-x86_64.zip`
 
             #### Sous Windows (avec 7-Zip ou WinRAR) :
-            1. Téléchargez tous les fichiers `.z01`, `.z02`... et `.zip` dans le **même dossier**.
-            2. Faites un clic droit sur `OnyxOS-2.0-live-x86_64.zip` → **7-Zip** → **Extraire ici**.
-            3. Vous obtenez directement `OnyxOS-2.0-live-x86_64.iso`.
+            1. Téléchargez tous les fichiers `.z01` et `.zip` dans le **même dossier**.
+            2. Clic droit sur `OnyxOS-2.1-live-x86_64.zip` → **7-Zip** → **Extraire ici**.
+            3. Vous obtenez directement `OnyxOS-2.1-live-x86_64.iso`.
 
             #### Sous Linux / macOS :
             ```bash
-            # Fusionner les volumes en une archive unique puis extraire
-            zip -s 0 OnyxOS-2.0-live-x86_64.zip --out OnyxOS-2.0-single.zip
-            unzip OnyxOS-2.0-single.zip
-            # Vérifier la somme de contrôle SHA256
-            sha256sum -c OnyxOS-2.0-live-x86_64.iso.sha256
+            zip -s 0 OnyxOS-2.1-live-x86_64.zip --out OnyxOS-2.1-single.zip
+            unzip OnyxOS-2.1-single.zip
+            sha256sum -c OnyxOS-2.1-live-x86_64.iso.sha256
             ```
           files: |
-            OnyxOS-2.0-live-x86_64.zip
-            OnyxOS-2.0-live-x86_64.z*
-            OnyxOS-2.0-live-x86_64.iso.sha256
+            OnyxOS-2.1-live-x86_64.zip
+            OnyxOS-2.1-live-x86_64.z*
+            OnyxOS-2.1-live-x86_64.iso.sha256
           prerelease: false
           make_latest: true
         env:

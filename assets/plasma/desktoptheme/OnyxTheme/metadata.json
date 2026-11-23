@@ -1,0 +1,10 @@
+{
+    "KPlugin": {
+        "Authors": [{"Name": "OnyxOS Team"}],
+        "Description": "OnyxOS Obsidian Matte Plasma Theme — Net, moderne et sans flou",
+        "Id": "OnyxTheme",
+        "License": "GPLv2+",
+        "Name": "OnyxTheme",
+        "Version": "2.1"
+    }
+}

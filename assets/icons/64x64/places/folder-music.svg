@@ -6,14 +6,9 @@
       <stop offset="100%" stop-color="#7850DC"/>
     </linearGradient>
   </defs>
-  <!-- Dossier arrière -->
-  <rect x="2" y="12" width="44" height="32" rx="4" fill="#0B0A10" stroke="#9333EA" stroke-width="1.5"/>
-  <!-- Onglet dossier -->
+  <rect x="2" y="12" width="44" height="32" rx="4" fill="#0F0D18" stroke="#9333EA" stroke-width="1.5"/>
   <path d="M2 12 Q2 8 6 8 L18 8 Q22 8 24 12 Z" fill="url(#fg)"/>
-  <!-- Corps dossier -->
-  <rect x="2" y="12" width="44" height="32" rx="4" fill="url(#fg)" fill-opacity="0.85"/>
-  <!-- Reflet -->
+  <rect x="2" y="12" width="44" height="32" rx="4" fill="url(#fg)" fill-opacity="0.9"/>
   <rect x="4" y="14" width="40" height="8" rx="2" fill="white" fill-opacity="0.08"/>
-  <!-- Contour -->
   <rect x="2" y="12" width="44" height="32" rx="4" fill="none" stroke="#9333EA" stroke-width="1.2"/>
 </svg>

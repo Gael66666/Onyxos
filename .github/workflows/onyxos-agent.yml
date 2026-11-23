@@ -24,7 +24,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          gemini -p "Tu es l'agent autonome d'OnyxOS. Applique la demande suivante sur le dépôt : ${{ github.event.issue.title }} - ${{ github.event.issue.body }}" --yolo
+          gemini -p "Tu es l'agent autonome d'OnyxOS. Respecte impérativement les règles de AGENTS.md. À chaque commit/push, incrémente le numéro de version d'OnyxOS (ex: v2.1 -> v2.2) dans AGENTS.md, config/os-release, rebuild-live-iso.sh, .github/workflows/build-onyxos-iso.yml et le message de commit. Applique la demande suivante : ${{ github.event.issue.title }} - ${{ github.event.issue.body }}" --yolo
 
       - name: Sauvegarder les modifications sur GitHub
         run: |

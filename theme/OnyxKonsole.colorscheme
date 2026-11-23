@@ -1,14 +1,14 @@
 [General]
-Description=Onyx Dark
-Opacity=0.96
-Blur=true
+Description=Onyx Dark Matte
+Opacity=1.0
+Blur=false
 ColorRandomization=false
 
 [Background]
-Color=11,10,16
+Color=13,11,20
 
 [BackgroundFaint]
-Color=8,7,12
+Color=9,8,14
 
 [BackgroundIntense]
 Color=21,19,32
@@ -23,10 +23,10 @@ Color=148,163,184
 Color=255,255,255
 
 [Color0]
-Color=11,10,16
+Color=13,11,20
 
 [Color0Faint]
-Color=8,7,12
+Color=9,8,14
 
 [Color0Intense]
 Color=30,27,46

@@ -1,6 +1,6 @@
 [Plymouth Theme]
 Name=OnyxOS
-Description=OnyxOS 1.0 boot splash
+Description=OnyxOS 2.1 boot splash
 ModuleName=two-step
 
 [two-step]
