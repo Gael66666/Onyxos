@@ -24,45 +24,23 @@
       <feComposite in="SourceGraphic" in2="blur" operator="over"/>
     </filter>
   </defs>
-
-  <!-- Background Shield/Rounded Hexagon -->
   <rect width="512" height="512" rx="100" fill="url(#bgGlow)"/>
-  <rect width="504" height="504" x="4" y="4" rx="96" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-opacity="0.4"/>
-
-  <!-- Onyx Gemstone Geometric Polygons (Faceted Hexagonal Crystal) -->
+  <rect width="504" height="504" x="4" y="4" rx="96" fill="none"
+        stroke="#8B5CF6" stroke-width="2" stroke-opacity="0.4"/>
   <g filter="url(#glow)">
-    <!-- Outer Glow Silhouette -->
     <polygon points="256,60 410,150 410,330 256,420 102,330 102,150"
              fill="none" stroke="#A855F7" stroke-width="6" stroke-linejoin="round"/>
-
-    <!-- Facet 1: Top Upper Left -->
     <polygon points="256,60 256,240 102,150" fill="url(#purpleGrad1)" fill-opacity="0.9"/>
-
-    <!-- Facet 2: Top Upper Right -->
     <polygon points="256,60 410,150 256,240" fill="url(#purpleGrad2)" fill-opacity="0.8"/>
-
-    <!-- Facet 3: Lower Left -->
     <polygon points="102,150 256,240 102,330" fill="#3B186B" fill-opacity="0.95"/>
-
-    <!-- Facet 4: Bottom Left -->
     <polygon points="102,330 256,240 256,420" fill="url(#purpleGrad1)" fill-opacity="0.75"/>
-
-    <!-- Facet 5: Bottom Right -->
     <polygon points="256,420 256,240 410,330" fill="#2E1065" fill-opacity="0.9"/>
-
-    <!-- Facet 6: Lower Right -->
     <polygon points="410,330 256,240 410,150" fill="url(#purpleGrad2)" fill-opacity="0.85"/>
-
-    <!-- Center Gem Facet Highlight -->
     <polygon points="256,120 330,195 330,285 256,360 182,285 182,195"
              fill="none" stroke="url(#facetHighlight)" stroke-width="4"/>
-
-    <!-- Core Radiant Star -->
     <circle cx="256" cy="240" r="14" fill="#EDE9FE"/>
   </g>
-
-  <!-- Typography: ONYXOS -->
   <text x="256" y="475" text-anchor="middle"
-        font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="34"
+        font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="34"
         fill="#EDE9FE" letter-spacing="8">ONYXOS</text>
 </svg>

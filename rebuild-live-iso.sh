@@ -68,6 +68,9 @@ umount_chroot() {
             umount -l "$ROOT_TREE/$target" 2>/dev/null || true
         fi
     done
+    if [[ -f "$ROOT_TREE/etc/resolv.conf.onyxbuild" ]]; then
+        mv -f "$ROOT_TREE/etc/resolv.conf.onyxbuild" "$ROOT_TREE/etc/resolv.conf" 2>/dev/null || true
+    fi
 }
 
 umount_erofs() {
@@ -94,6 +97,12 @@ mount_chroot() {
     mount --bind /dev  "$ROOT_TREE/dev"
     mount --bind /dev/pts "$ROOT_TREE/dev/pts" 2>/dev/null || true
     mount --bind /run  "$ROOT_TREE/run"  2>/dev/null || true
+    if [[ -f /etc/resolv.conf ]]; then
+        if [[ ! -f "$ROOT_TREE/etc/resolv.conf.onyxbuild" ]]; then
+            cp -L "$ROOT_TREE/etc/resolv.conf" "$ROOT_TREE/etc/resolv.conf.onyxbuild" 2>/dev/null || true
+        fi
+        cp -L /etc/resolv.conf "$ROOT_TREE/etc/resolv.conf" 2>/dev/null || true
+    fi
 }
 
 # ==============================================================================
@@ -648,7 +657,7 @@ ShowDelay=0
 EOF
 
 mount_chroot
-trap 'umount_chroot; if [[ "$KEEP_BUILD" == "1" ]]; then warn "Dossier de build conservé : $BUILD_DIR"; else rm -rf "$BUILD_DIR"; fi' EXIT
+trap cleanup EXIT
 
 mkdir -p "$ROOT_TREE/var/tmp"
 chroot "$ROOT_TREE" /usr/bin/plymouth-set-default-theme onyxos 2>/dev/null || \

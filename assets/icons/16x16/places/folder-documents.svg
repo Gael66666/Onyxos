@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <linearGradient id="fg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6E46D2"/>
+    </linearGradient>
+  </defs>
+  <!-- Dossier arrière -->
+  <rect x="2" y="12" width="44" height="32" rx="4" fill="#0B0A10" stroke="#8B5CF6" stroke-width="1.5"/>
+  <!-- Onglet dossier -->
+  <path d="M2 12 Q2 8 6 8 L18 8 Q22 8 24 12 Z" fill="url(#fg)"/>
+  <!-- Corps dossier -->
+  <rect x="2" y="12" width="44" height="32" rx="4" fill="url(#fg)" fill-opacity="0.85"/>
+  <!-- Reflet -->
+  <rect x="4" y="14" width="40" height="8" rx="2" fill="white" fill-opacity="0.08"/>
+  <!-- Contour -->
+  <rect x="2" y="12" width="44" height="32" rx="4" fill="none" stroke="#8B5CF6" stroke-width="1.2"/>
+</svg>
