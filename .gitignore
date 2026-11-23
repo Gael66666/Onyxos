@@ -1,23 +1,43 @@
+# OnyxOS — .gitignore
+
+# ISOs et checksum (trop volumineux pour GitHub)
 *.iso
 *.iso.bak
 *.iso.sha256
 *.sha256
+
+# Images temporaires de build
 *.ppm
-*.log
-*.fd
 *.img
 vga.bin
-work/
-screen1.png
-boot_progress.png
-build-flattened.ks
-build-output/
+
+# Logs QEMU et build
+*.log
 qemu-boot.log
 fedora-kde-boot.log
 
+# Dossiers de travail temporaires
+work/
+build-output/
+/var/tmp/onyxos-live-build/
+
+# Captures QEMU temporaires
+screen1.png
+boot_progress.png
+
+# Fichiers intermédiaires kickstart
+build-flattened.ks
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
 
-*.iso
-*.sha256
+# AGENTS.md (notes internes de session, non public)
 AGENTS.md
+
+# Firmware QEMU
+*.fd
+
+# Assets générés (re-générables via generate_assets.py)
+# assets/icons/  ← on garde pour référence GitHub

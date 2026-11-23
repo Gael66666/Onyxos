@@ -1,0 +1,3 @@
+# Ce dossier héberge le dépôt DNF OnyxOS (RPMs + repodata/).
+# Les fichiers .rpm et repodata/ sont générés par scripts/build-update-rpm.sh.
+# Une fois générés, committer et pousser ce dossier sur GitHub Pages.
