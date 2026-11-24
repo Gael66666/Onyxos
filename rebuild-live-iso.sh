@@ -1,33 +1,17 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# OnyxOS 2.1 (Plasma Edition) - Live ISO builder
+# OnyxOS 2.2 (Plasma Edition) - Live ISO builder
 #
-# Nouveautés v2.1 "Obsidian Matte & Electric Violet" (sans flou) :
-#   * Compression EROFS accélérée en zstd,15 (~5 min de build au lieu de 4h30)
-#   * Libération immédiate du rootfs avant scellage xorriso (+15 Go libres)
-#   * DNF5 ultra-rapide (max_parallel_downloads=10, fastestmirror=True)
-#   * Hook DNF5 transparent (/etc/dnf/libdnf5-plugins/actions.d/onyxos-rebrand.actions)
-#     laissant passer 100% des mises à jour Fedora sans conflit de branding
-#   * OnyxAurorae : Décoration de fenêtres épurée sans bordures latérales
-#   * OnyxTheme : Thème Plasma 6 noir profond mat (#0F0D18) net sans flou
-#   * Barre supérieure flottante 28 px & dock flottant 62 px avec lanceurs épinglés
-#   * Konsole noir mat (#0D0B14) sans flou, police JetBrains Mono
-#   * RPM Fusion Free/Nonfree, codecs ffmpeg/gstreamer, Flathub préconfiguré
-#   * KDE Connect, Spectacle, Ark+p7zip, Night Color et Bluetooth auto-activés
-#   * Sysctl basse latence optimisé (vm.max_map_count=2147483642, BBR)
-#   * DNS rapide Cloudflare/Quad9 dans systemd-resolved et télémétrie Firefox coupée
-#
-# Règles d'or conservées :
-#   * Ne jamais toucher à l'ISO source Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso
-#   * Extraction EROFS via erofsfuse + cp -a
-#   * Scellage mkisofs compact (BIOS + UEFI El Torito partition 2)
-#   * Fichiers texte Linux en LF
+# Nouveautés v2.2 :
+#   * Correction démontage FUSE erofsfuse robuste (zero erreur 'Function not implemented')
+#   * Nettoyage sécurisé du répertoire temporaire de montage
+#   * Passage en version v2.2 synchronisée
 # ==============================================================================
 set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ISO="$BASE_DIR/Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso"
-OUTPUT_NAME="OnyxOS-2.1-live-x86_64.iso"
+OUTPUT_NAME="OnyxOS-2.2-live-x86_64.iso"
 OUTPUT_ISO="$BASE_DIR/$OUTPUT_NAME"
 BUILD_DIR="${ONYXOS_BUILD_DIR:-/var/tmp/onyxos-live-build}"
 ISO_TREE="$BUILD_DIR/iso"
@@ -72,17 +56,21 @@ umount_chroot() {
 
 umount_erofs() {
     if mountpoint -q "$MOUNT_TREE" 2>/dev/null; then
-        fusermount3 -u "$MOUNT_TREE" 2>/dev/null || true
+        umount -l "$MOUNT_TREE" 2>/dev/null || umount "$MOUNT_TREE" 2>/dev/null || fusermount3 -uz "$MOUNT_TREE" 2>/dev/null || true
     fi
+    pkill -9 -f "erofsfuse" 2>/dev/null || true
 }
 
 cleanup() {
-    umount_chroot
-    umount_erofs
+    umount_chroot || true
+    umount_erofs || true
+    if mountpoint -q "$MOUNT_TREE" 2>/dev/null; then
+        umount -l "$MOUNT_TREE" 2>/dev/null || true
+    fi
     if [[ "$KEEP_BUILD" == "1" ]]; then
         warn "Dossier de build conservé : $BUILD_DIR"
     else
-        rm -rf "$BUILD_DIR"
+        rm -rf "$BUILD_DIR" 2>/dev/null || true
     fi
 }
 trap cleanup EXIT
@@ -103,13 +91,13 @@ mount_chroot() {
 }
 
 # ==============================================================================
-# 0. Ressources visuelles v2.1
+# 0. Ressources visuelles v2.2
 # ==============================================================================
 if [[ "${ONYXOS_REGEN_ASSETS:-0}" == "1" || ! -f "$BASE_DIR/assets/onyxos-logo.png" \
       || ! -f "$BASE_DIR/assets/aurorae/OnyxAurorae/themerc" ]]; then
-    log "Étape 0/9 : génération des ressources visuelles v2.1 (Obsidian Matte, sans flou)"
+    log "Étape 0/9 : génération des ressources visuelles v2.2 (Obsidian Matte, sans flou)"
     python3 "$BASE_DIR/assets/generate_assets.py"
-    ok "Ressources v2.1 générées."
+    ok "Ressources v2.2 générées."
 else
     log "Étape 0/9 : ressources visuelles déjà présentes"
 fi
@@ -125,12 +113,19 @@ xorriso -osirrox on -indev "$SOURCE_ISO" -extract / "$ISO_TREE" >/dev/null
 ok "ISO extraite."
 
 log "Étape 2/9 : extraction du système live EROFS (xattrs préservés)"
-rm -rf "$ROOT_TREE" "$MOUNT_TREE"
+rm -rf "$ROOT_TREE" 2>/dev/null || true
+if mountpoint -q "$MOUNT_TREE" 2>/dev/null; then
+    umount -l "$MOUNT_TREE" 2>/dev/null || fusermount3 -uz "$MOUNT_TREE" 2>/dev/null || true
+fi
+rm -rf "$MOUNT_TREE" 2>/dev/null || true
 mkdir -p "$ROOT_TREE" "$MOUNT_TREE"
 erofsfuse "$ISO_TREE/LiveOS/squashfs.img" "$MOUNT_TREE" 2>/dev/null
 cp -a "$MOUNT_TREE/." "$ROOT_TREE/"
 umount_erofs
-rmdir "$MOUNT_TREE" 2>/dev/null || true
+if mountpoint -q "$MOUNT_TREE" 2>/dev/null; then
+    umount -l "$MOUNT_TREE" 2>/dev/null || true
+fi
+rm -rf "$MOUNT_TREE" 2>/dev/null || true
 [[ -e "$ROOT_TREE/usr/lib/os-release" ]] || die "Racine EROFS invalide."
 ok "Racine live extraite."
 
@@ -139,22 +134,22 @@ KVER="$(ls -1 "$ROOT_TREE/lib/modules" 2>/dev/null | sort -V | tail -n1 || true)
 log "Noyau cible : $KVER"
 
 # ==============================================================================
-# 3. Identité système OnyxOS 2.1
+# 3. Identité système OnyxOS 2.2
 # ==============================================================================
-log "Étape 3/9 : identité système OnyxOS 2.1"
+log "Étape 3/9 : identité système OnyxOS 2.2"
 install -Dm644 "$BASE_DIR/config/os-release" "$ROOT_TREE/usr/lib/os-release"
 rm -f "$ROOT_TREE/etc/os-release"
 ln -s ../usr/lib/os-release "$ROOT_TREE/etc/os-release"
 
-printf 'OnyxOS release 2.1 (Obsidian)\n' > "$ROOT_TREE/etc/onyxos-release"
+printf 'OnyxOS release 2.2 (Obsidian)\n' > "$ROOT_TREE/etc/onyxos-release"
 rm -f "$ROOT_TREE/etc/fedora-release" "$ROOT_TREE/etc/system-release" \
       "$ROOT_TREE/etc/redhat-release" "$ROOT_TREE/usr/lib/fedora-release"
 ln -s onyxos-release "$ROOT_TREE/etc/system-release"
 ln -s onyxos-release "$ROOT_TREE/etc/redhat-release"
 
-printf 'OnyxOS 2.1 \\r (\\l)\n' > "$ROOT_TREE/etc/issue"
-printf 'OnyxOS 2.1 \\r (\\l)\n' > "$ROOT_TREE/etc/issue.net"
-printf 'Bienvenue sur OnyxOS 2.1 (Obsidian Matte & Electric Violet)\n' > "$ROOT_TREE/etc/motd"
+printf 'OnyxOS 2.2 \\r (\\l)\n' > "$ROOT_TREE/etc/issue"
+printf 'OnyxOS 2.2 \\r (\\l)\n' > "$ROOT_TREE/etc/issue.net"
+printf 'Bienvenue sur OnyxOS 2.2 (Obsidian Matte & Electric Violet)\n' > "$ROOT_TREE/etc/motd"
 find "$ROOT_TREE/etc/motd.d" -type f -delete 2>/dev/null || true
 printf 'onyxos\n' > "$ROOT_TREE/etc/hostname"
 install -Dm644 "$BASE_DIR/config/kcm-about-distrorc" "$ROOT_TREE/etc/xdg/kcm-about-distrorc"
@@ -168,7 +163,7 @@ rm -f "$ROOT_TREE"/etc/ssh/ssh_host_* 2>/dev/null || true
 
 sed -i 's/hostnamectl set-hostname "localhost-live"/hostnamectl set-hostname "onyxos"/' \
     "$ROOT_TREE/usr/libexec/livesys/livesys-main" 2>/dev/null || true
-ok "Identité système OnyxOS 2.1 appliquée."
+ok "Identité système OnyxOS 2.2 appliquée."
 
 # ==============================================================================
 # 4. Locale & clavier français
@@ -342,7 +337,7 @@ cat > "$LNF/metadata.json" <<'EOF'
     "KPackageStructure": "Plasma/LookAndFeel",
     "KPlugin": {
         "Authors": [{"Name": "OnyxOS Team"}],
-        "Description": "OnyxOS 2.1 Obsidian Matte look and feel — Barre et dock flottants sans flou",
+        "Description": "OnyxOS 2.2 Obsidian Matte look and feel — Barre et dock flottants sans flou",
         "Id": "org.onyxos.desktop",
         "License": "GPLv2+",
         "Name": "OnyxOS"
@@ -571,7 +566,7 @@ find "$ROOT_TREE/usr/share/konsole" -maxdepth 1 -iname '*fedora*' -delete 2>/dev
 find "$ROOT_TREE/usr/share/applications" -maxdepth 1 -iname '*fedora*' -delete 2>/dev/null || true
 rm -f "$ROOT_TREE/usr/share/applications/org.fedoraproject.MediaWriter.desktop" 2>/dev/null || true
 
-ok "Bureau KDE Plasma 6 v2.1 appliqué avec succès."
+ok "Bureau KDE Plasma 6 v2.2 appliqué avec succès."
 
 # ==============================================================================
 # 6. Plymouth boot splash
@@ -636,10 +631,10 @@ cat > "$ROOT_TREE/usr/local/bin/onyxos-rebrand-hook" <<'EOF'
 # Hook OnyxOS post-transaction DNF5
 [ -f /usr/lib/os-release ] && sed -i \
     -e 's/^NAME=.*/NAME="OnyxOS"/' \
-    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.1 (Obsidian Matte)"/' \
+    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.2 (Obsidian Matte)"/' \
     -e 's/^ID=.*/ID=onyxos/' \
-    -e 's/^VERSION=.*/VERSION="2.1"/' \
-    -e 's/^VERSION_ID=.*/VERSION_ID="2.1"/' \
+    -e 's/^VERSION=.*/VERSION="2.2"/' \
+    -e 's/^VERSION_ID=.*/VERSION_ID="2.2"/' \
     /usr/lib/os-release 2>/dev/null || true
 [ -L /etc/os-release ] || ln -sf ../usr/lib/os-release /etc/os-release 2>/dev/null || true
 [ -f /etc/hostname ] || echo "onyxos" > /etc/hostname
@@ -668,7 +663,7 @@ chmod 0755 "$ROOT_TREE/usr/local/bin/onyxos-update"
 
 # --- Sysctl basse latence, jeux (vm.max_map_count) & réseau BBR ---
 cat > "$ROOT_TREE/etc/sysctl.d/99-onyxos-performance.conf" <<'EOF'
-# OnyxOS 2.1 — Performances jeux, mémoire basse latence et BBR
+# OnyxOS 2.2 — Performances jeux, mémoire basse latence et BBR
 vm.swappiness = 10
 vm.vfs_cache_pressure = 50
 vm.dirty_ratio = 10
@@ -781,7 +776,7 @@ cat > "$FIREFOX_DEFAULTS/onyxos.js" <<'EOF'
 pref("browser.bookmarks.restore_default_bookmarks", false);
 pref("browser.bookmarks.addedImportButton", true);
 pref("distribution.id", "OnyxOS");
-pref("distribution.version", "2.1");
+pref("distribution.version", "2.2");
 pref("browser.newtabpage.activity-stream.feeds.topsites", false);
 pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 pref("browser.newtabpage.activity-stream.showSponsored", false);
@@ -850,7 +845,7 @@ GRUB_CONFIG="$ISO_TREE/boot/grub2/grub.cfg"
 
 sed -i \
     -e 's/^set default="1"/set default="0"/' \
-    -e 's/Fedora-KDE-Desktop-Live/OnyxOS 2.1 (Plasma Edition)/g' \
+    -e 's/Fedora-KDE-Desktop-Live/OnyxOS 2.2 (Plasma Edition)/g' \
     -e 's/Fedora-KDE-Live-45/ONYXOS_KDE_LIVE/g' \
     -e 's/--class fedora/--class onyxos/g' \
     "$GRUB_CONFIG"
@@ -907,7 +902,7 @@ ok "ISO finale : $OUTPUT_ISO ($(du -h "$OUTPUT_ISO" | cut -f1))"
 ok "SHA256 : $(cut -d' ' -f1 "$OUTPUT_NAME.sha256")"
 
 printf '\n%b==========================================================%b\n' "$GREEN" "$RESET"
-printf '%b      ONYXOS 2.1 (PLASMA EDITION) EST PRÊTE             %b\n' "$GREEN" "$RESET"
+printf '%b      ONYXOS 2.2 (PLASMA EDITION) EST PRÊTE             %b\n' "$GREEN" "$RESET"
 printf '%b==========================================================%b\n' "$GREEN" "$RESET"
 
 umount_chroot
