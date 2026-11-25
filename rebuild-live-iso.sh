@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# OnyxOS 2.2 (Plasma Edition) - Live ISO builder
+# OnyxOS 2.3 (Plasma Edition) - Live ISO builder
 #
-# Nouveautés v2.2 :
-#   * Correction démontage FUSE erofsfuse robuste (zero erreur 'Function not implemented')
-#   * Nettoyage sécurisé du répertoire temporaire de montage
-#   * Passage en version v2.2 synchronisée
+# Nouveautés v2.3 :
+#   * Barre unique moderne en bas (44 px, flottante)
+#   * Papirus-Dark teinté violet + logo cubique OnyxOS + Breeze noir sans bordures
+#   * Fond d'écran abstrait minimaliste noir/violet + raccourcis Meta+E/V/Shift+S
+#   * Wine complet 64-bit + 32-bit i686 vérifié dans le chroot + Configuration Wine
+#   * Timeshift préinstallé & suppression complète logos Fedora (Plymouth/Anaconda/Cockpit)
 # ==============================================================================
 set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ISO="$BASE_DIR/Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso"
-OUTPUT_NAME="OnyxOS-2.2-live-x86_64.iso"
+OUTPUT_NAME="OnyxOS-2.3-live-x86_64.iso"
 OUTPUT_ISO="$BASE_DIR/$OUTPUT_NAME"
 BUILD_DIR="${ONYXOS_BUILD_DIR:-/var/tmp/onyxos-live-build}"
 ISO_TREE="$BUILD_DIR/iso"
@@ -49,8 +51,16 @@ umount_chroot() {
             umount -l "$ROOT_TREE/$target" 2>/dev/null || true
         fi
     done
-    if [[ -f "$ROOT_TREE/etc/resolv.conf.onyxbuild" ]]; then
+    if [[ -f "$ROOT_TREE/etc/resolv.conf.onyxlink" ]]; then
+        local orig_link
+        orig_link="$(cat "$ROOT_TREE/etc/resolv.conf.onyxlink")"
+        rm -f "$ROOT_TREE/etc/resolv.conf" "$ROOT_TREE/etc/resolv.conf.onyxlink"
+        ln -s "$orig_link" "$ROOT_TREE/etc/resolv.conf" 2>/dev/null || true
+    elif [[ -f "$ROOT_TREE/etc/resolv.conf.onyxbuild" ]]; then
         mv -f "$ROOT_TREE/etc/resolv.conf.onyxbuild" "$ROOT_TREE/etc/resolv.conf" 2>/dev/null || true
+    else
+        rm -f "$ROOT_TREE/etc/resolv.conf"
+        ln -s ../run/systemd/resolve/stub-resolv.conf "$ROOT_TREE/etc/resolv.conf" 2>/dev/null || true
     fi
 }
 
@@ -82,22 +92,28 @@ mount_chroot() {
     mount --bind /dev  "$ROOT_TREE/dev"
     mount --bind /dev/pts "$ROOT_TREE/dev/pts" 2>/dev/null || true
     mount --bind /run  "$ROOT_TREE/run"  2>/dev/null || true
+    if [[ -L "$ROOT_TREE/etc/resolv.conf" ]]; then
+        readlink "$ROOT_TREE/etc/resolv.conf" > "$ROOT_TREE/etc/resolv.conf.onyxlink"
+    elif [[ -f "$ROOT_TREE/etc/resolv.conf" && ! -f "$ROOT_TREE/etc/resolv.conf.onyxbuild" ]]; then
+        cp -a "$ROOT_TREE/etc/resolv.conf" "$ROOT_TREE/etc/resolv.conf.onyxbuild" 2>/dev/null || true
+    fi
+    rm -f "$ROOT_TREE/etc/resolv.conf"
     if [[ -f /etc/resolv.conf ]]; then
-        if [[ ! -f "$ROOT_TREE/etc/resolv.conf.onyxbuild" ]]; then
-            cp -L "$ROOT_TREE/etc/resolv.conf" "$ROOT_TREE/etc/resolv.conf.onyxbuild" 2>/dev/null || true
-        fi
         cp -L /etc/resolv.conf "$ROOT_TREE/etc/resolv.conf" 2>/dev/null || true
+    else
+        printf 'nameserver 1.1.1.1\nnameserver 9.9.9.9\n' > "$ROOT_TREE/etc/resolv.conf"
     fi
 }
 
 # ==============================================================================
-# 0. Ressources visuelles v2.2
+# 0. Ressources visuelles v2.3
 # ==============================================================================
 if [[ "${ONYXOS_REGEN_ASSETS:-0}" == "1" || ! -f "$BASE_DIR/assets/onyxos-logo.png" \
-      || ! -f "$BASE_DIR/assets/aurorae/OnyxAurorae/themerc" ]]; then
-    log "Étape 0/9 : génération des ressources visuelles v2.2 (Obsidian Matte, sans flou)"
+      || ! -f "$BASE_DIR/assets/onyxos-logo-cube.svg" \
+      || ! -f "$BASE_DIR/assets/onyxos-logo-transparent.png" ]]; then
+    log "Étape 0/9 : génération des ressources visuelles v2.3 (Obsidian Matte)"
     python3 "$BASE_DIR/assets/generate_assets.py"
-    ok "Ressources v2.2 générées."
+    ok "Ressources v2.3 générées."
 else
     log "Étape 0/9 : ressources visuelles déjà présentes"
 fi
@@ -134,22 +150,22 @@ KVER="$(ls -1 "$ROOT_TREE/lib/modules" 2>/dev/null | sort -V | tail -n1 || true)
 log "Noyau cible : $KVER"
 
 # ==============================================================================
-# 3. Identité système OnyxOS 2.2
+# 3. Identité système OnyxOS 2.3
 # ==============================================================================
-log "Étape 3/9 : identité système OnyxOS 2.2"
+log "Étape 3/9 : identité système OnyxOS 2.3"
 install -Dm644 "$BASE_DIR/config/os-release" "$ROOT_TREE/usr/lib/os-release"
 rm -f "$ROOT_TREE/etc/os-release"
 ln -s ../usr/lib/os-release "$ROOT_TREE/etc/os-release"
 
-printf 'OnyxOS release 2.2 (Obsidian)\n' > "$ROOT_TREE/etc/onyxos-release"
+printf 'OnyxOS release 2.3 (Obsidian)\n' > "$ROOT_TREE/etc/onyxos-release"
 rm -f "$ROOT_TREE/etc/fedora-release" "$ROOT_TREE/etc/system-release" \
       "$ROOT_TREE/etc/redhat-release" "$ROOT_TREE/usr/lib/fedora-release"
 ln -s onyxos-release "$ROOT_TREE/etc/system-release"
 ln -s onyxos-release "$ROOT_TREE/etc/redhat-release"
 
-printf 'OnyxOS 2.2 \\r (\\l)\n' > "$ROOT_TREE/etc/issue"
-printf 'OnyxOS 2.2 \\r (\\l)\n' > "$ROOT_TREE/etc/issue.net"
-printf 'Bienvenue sur OnyxOS 2.2 (Obsidian Matte & Electric Violet)\n' > "$ROOT_TREE/etc/motd"
+printf 'OnyxOS 2.3 \\r (\\l)\n' > "$ROOT_TREE/etc/issue"
+printf 'OnyxOS 2.3 \\r (\\l)\n' > "$ROOT_TREE/etc/issue.net"
+printf 'Bienvenue sur OnyxOS 2.3 (Obsidian Matte & Electric Violet)\n' > "$ROOT_TREE/etc/motd"
 find "$ROOT_TREE/etc/motd.d" -type f -delete 2>/dev/null || true
 printf 'onyxos\n' > "$ROOT_TREE/etc/hostname"
 install -Dm644 "$BASE_DIR/config/kcm-about-distrorc" "$ROOT_TREE/etc/xdg/kcm-about-distrorc"
@@ -163,7 +179,7 @@ rm -f "$ROOT_TREE"/etc/ssh/ssh_host_* 2>/dev/null || true
 
 sed -i 's/hostnamectl set-hostname "localhost-live"/hostnamectl set-hostname "onyxos"/' \
     "$ROOT_TREE/usr/libexec/livesys/livesys-main" 2>/dev/null || true
-ok "Identité système OnyxOS 2.2 appliquée."
+ok "Identité système OnyxOS 2.3 appliquée."
 
 # ==============================================================================
 # 4. Locale & clavier français
@@ -210,12 +226,14 @@ install -Dm644 "$BASE_DIR/theme/OnyxKonsole.colorscheme" \
     "$ROOT_TREE/usr/share/konsole/OnyxKonsole.colorscheme"
 
 # --- Logos ---
-install -Dm644 "$BASE_DIR/assets/onyxos-logo.svg" \
+install -Dm644 "$BASE_DIR/assets/onyxos-logo-cube.svg" \
     "$ROOT_TREE/usr/share/pixmaps/onyxos-logo.svg"
-install -Dm644 "$BASE_DIR/assets/onyxos-logo.png" \
+install -Dm644 "$BASE_DIR/assets/onyxos-logo-transparent.png" \
     "$ROOT_TREE/usr/share/pixmaps/onyxos-logo.png"
+install -Dm644 "$BASE_DIR/assets/onyxos-logo-transparent.png" \
+    "$ROOT_TREE/usr/share/pixmaps/system-logo-white.png"
 
-# --- Fond d'écran net ---
+# --- Fond d'écran abstrait moderne ---
 install -Dm644 "$BASE_DIR/assets/wallpaper-1920x1080.png" \
     "$ROOT_TREE/usr/share/wallpapers/OnyxOS/contents/images/1920x1080.png"
 install -Dm644 "$BASE_DIR/assets/wallpaper-3840x2160.png" \
@@ -231,13 +249,6 @@ cat > "$ROOT_TREE/usr/share/wallpapers/OnyxOS/metadata.json" <<'EOF'
 }
 EOF
 
-# --- Thème de fenêtres Aurorae (OnyxAurorae sans bordures latérales) ---
-if [[ -d "$BASE_DIR/assets/aurorae/OnyxAurorae" ]]; then
-    mkdir -p "$ROOT_TREE/usr/share/aurorae/themes"
-    cp -a "$BASE_DIR/assets/aurorae/OnyxAurorae" "$ROOT_TREE/usr/share/aurorae/themes/"
-    ok "Thème de fenêtres OnyxAurorae installé."
-fi
-
 # --- Thème Plasma 6 (OnyxTheme - Obsidian Matte, zéro flou) ---
 if [[ -d "$BASE_DIR/assets/plasma/desktoptheme/OnyxTheme" ]]; then
     mkdir -p "$ROOT_TREE/usr/share/plasma/desktoptheme"
@@ -245,27 +256,22 @@ if [[ -d "$BASE_DIR/assets/plasma/desktoptheme/OnyxTheme" ]]; then
     ok "Thème de bureau OnyxTheme (Obsidian Matte) installé."
 fi
 
-# --- Pack d'icônes OnyxIcons (enfant de Papirus-Dark) ---
+# --- Pack d'icônes OnyxIcons (enfant de Papirus-Dark teinté violet, logo cubique menu Démarrer) ---
 ONYXICONS="$ROOT_TREE/usr/share/icons/OnyxIcons"
-mkdir -p "$ONYXICONS"
+rm -rf "$ONYXICONS"
+mkdir -p "$ONYXICONS/scalable/places" "$ONYXICONS/48x48/places" "$ONYXICONS/64x64/places"
 cat > "$ONYXICONS/index.theme" <<'EOF'
 [Icon Theme]
 Name=OnyxIcons
-Comment=OnyxOS Custom Icon Theme (Papirus-Dark child)
+Comment=OnyxOS Modern Icon Theme (Papirus-Dark Violet child)
 Inherits=Papirus-Dark,Papirus,breeze-dark,hicolor
-Directories=16x16/places,22x22/places,32x32/places,48x48/places,64x64/places,16x16/status,22x22/status,32x32/status,48x48/apps,64x64/apps,128x128/apps
+Directories=scalable/places,48x48/places,64x64/places
 
-[16x16/places]
-Size=16
-Type=Fixed
-
-[22x22/places]
-Size=22
-Type=Fixed
-
-[32x32/places]
-Size=32
-Type=Fixed
+[scalable/places]
+Size=48
+MinSize=16
+MaxSize=512
+Type=Scalable
 
 [48x48/places]
 Size=48
@@ -274,46 +280,24 @@ Type=Fixed
 [64x64/places]
 Size=64
 Type=Fixed
-
-[16x16/status]
-Size=16
-Type=Fixed
-
-[22x22/status]
-Size=22
-Type=Fixed
-
-[32x32/status]
-Size=32
-Type=Fixed
-
-[48x48/apps]
-Size=48
-Type=Fixed
-
-[64x64/apps]
-Size=64
-Type=Fixed
-
-[128x128/apps]
-Size=128
-Type=Fixed
 EOF
 
-if [[ -d "$BASE_DIR/assets/icons" ]]; then
-    cp -a "$BASE_DIR/assets/icons/." "$ONYXICONS/"
-fi
-ok "Pack OnyxIcons installé."
+for icon_name in start-here-kde start-here distributor-logo; do
+    install -Dm644 "$BASE_DIR/assets/onyxos-logo-cube.svg" "$ONYXICONS/scalable/places/${icon_name}.svg"
+    install -Dm644 "$BASE_DIR/assets/onyxos-logo-cube.svg" "$ONYXICONS/48x48/places/${icon_name}.svg"
+    install -Dm644 "$BASE_DIR/assets/onyxos-logo-cube.svg" "$ONYXICONS/64x64/places/${icon_name}.svg"
+done
+ok "Pack OnyxIcons (Papirus-Dark Violet + logo cubique) configuré."
 
-# --- Configuration KWin SANS FLOU & Night Color ---
+# --- Configuration KWin SANS FLOU & Fenêtres Breeze noires épurées ---
 cat > "$ROOT_TREE/etc/xdg/kwinrc" <<'EOF'
 [Plugins]
 blurEnabled=false
 contrastEnabled=false
 
 [org.kde.kdecoration2]
-library=org.kde.kwin.aurorae
-theme=OnyxAurorae
+library=org.kde.breeze
+theme=Breeze
 BorderSize=None
 BorderSizeAuto=false
 
@@ -329,7 +313,32 @@ GLCore=true
 OpenGLIsUnsafe=false
 EOF
 
-# --- Look-and-feel Plasma avec barre 28px + dock 62px FLOTTANTS ---
+cat > "$ROOT_TREE/etc/xdg/breezerc" <<'EOF'
+[Common]
+OutlineIntensity=OutlineOff
+
+[Windeco]
+DrawBackgroundGradient=false
+DrawBorderOnMaximizedWindows=false
+DrawSizeGrip=false
+EOF
+
+# --- Raccourcis globaux ergonomiques (Meta+E, Meta+V, Meta+Shift+S) ---
+cat > "$ROOT_TREE/etc/xdg/kglobalshortcutsrc" <<'EOF'
+[org.kde.dolphin.desktop]
+_k_friendly_name=Dolphin
+_launch=Meta+E,none,Dolphin
+
+[org.kde.spectacle.desktop]
+RectangularRegionScreenShot=Meta+Shift+S,Meta+Print,Capture Rectangular Region
+_k_friendly_name=Spectacle
+
+[plasmashell]
+_k_friendly_name=Plasma
+show-on-mouse-pos=Meta+V,Meta+V,Open Klipper at Mouse Position
+EOF
+
+# --- Look-and-feel Plasma avec BARRE UNIQUE MODERNE EN BAS (44px, flottante) ---
 LNF="$ROOT_TREE/usr/share/plasma/look-and-feel/org.onyxos.desktop"
 mkdir -p "$LNF/contents/layouts"
 cat > "$LNF/metadata.json" <<'EOF'
@@ -337,7 +346,7 @@ cat > "$LNF/metadata.json" <<'EOF'
     "KPackageStructure": "Plasma/LookAndFeel",
     "KPlugin": {
         "Authors": [{"Name": "OnyxOS Team"}],
-        "Description": "OnyxOS 2.2 Obsidian Matte look and feel — Barre et dock flottants sans flou",
+        "Description": "OnyxOS 2.3 Obsidian Matte look and feel — Barre unique en bas sans flou",
         "Id": "org.onyxos.desktop",
         "License": "GPLv2+",
         "Name": "OnyxOS"
@@ -366,8 +375,8 @@ Image=OnyxOS
 cursorTheme=breeze_cursors
 
 [kwinrc][org.kde.kdecoration2]
-library=org.kde.kwin.aurorae
-theme=OnyxAurorae
+library=org.kde.breeze
+theme=Breeze
 BorderSize=None
 BorderSizeAuto=false
 
@@ -382,38 +391,24 @@ EOF
 cat > "$LNF/contents/layouts/org.kde.plasma.desktop-layout.js" <<'JSEOF'
 var desktopActivity = activities()[0];
 
-// ─── Barre supérieure fine 28px flottante ─────────────────────────────────────
-var topPanel = new Panel;
-topPanel.location   = "top";
-topPanel.height     = 28;
-topPanel.alignment  = "center";
-topPanel.hiding     = "none";
-topPanel.floating   = true;
+// ─── Barre unique moderne en bas (44px, flottante) ─────────────────────────────
+var bottomPanel = new Panel;
+bottomPanel.location = "bottom";
+bottomPanel.height   = 44;
+bottomPanel.hiding   = "none";
+bottomPanel.floating = true;
 
-var launcher = topPanel.addWidget("org.kde.plasma.kickoff");
+// 1. Menu Démarrer OnyxOS à gauche
+var launcher = bottomPanel.addWidget("org.kde.plasma.kickoff");
+launcher.currentConfigGroup = ["General"];
+launcher.writeConfig("icon", "start-here-kde");
 launcher.currentConfigGroup = ["Shortcuts"];
-launcher.writeConfig("global", "");
-topPanel.addWidget("org.kde.plasma.appmenu");
-topPanel.addWidget("org.kde.plasma.spacer");
-var clock = topPanel.addWidget("org.kde.plasma.digitalclock");
-clock.currentConfigGroup = ["Appearance"];
-clock.writeConfig("showDate", false);
-clock.writeConfig("showSeconds", "Never");
-topPanel.addWidget("org.kde.plasma.spacer");
-topPanel.addWidget("org.kde.plasma.systemtray");
-topPanel.addWidget("org.kde.plasma.keyboardlayout");
+launcher.writeConfig("global", "Alt+F1");
 
-// ─── Dock centré flottant 62px avec icônes épinglées ──────────────────────────
-var dock = new Panel;
-dock.location   = "bottom";
-dock.height     = 62;
-dock.alignment  = "center";
-dock.hiding     = "none";
-dock.floating   = true;
-dock.minimumLength = 420;
-dock.maximumLength = 850;
+bottomPanel.addWidget("org.kde.plasma.spacer");
 
-var tasks = dock.addWidget("org.kde.plasma.icontasks");
+// 2. Applications épinglées et fenêtres ouvertes (centrées)
+var tasks = bottomPanel.addWidget("org.kde.plasma.icontasks");
 tasks.currentConfigGroup = ["General"];
 tasks.writeConfig("launchers", [
     "applications:org.kde.dolphin.desktop",
@@ -423,7 +418,18 @@ tasks.writeConfig("launchers", [
     "applications:systemsettings.desktop"
 ]);
 
-// Fond d'écran net
+bottomPanel.addWidget("org.kde.plasma.spacer");
+
+// 3. Zone système, disposition clavier et horloge tout à droite
+bottomPanel.addWidget("org.kde.plasma.systemtray");
+bottomPanel.addWidget("org.kde.plasma.keyboardlayout");
+
+var clock = bottomPanel.addWidget("org.kde.plasma.digitalclock");
+clock.currentConfigGroup = ["Appearance"];
+clock.writeConfig("showDate", false);
+clock.writeConfig("showSeconds", "Never");
+
+// Fond d'écran abstrait moderne
 desktopActivity.wallpaperPlugin = "org.kde.image";
 desktopActivity.currentConfigGroup = ["Wallpaper", "org.kde.image", "General"];
 desktopActivity.writeConfig("Image", "file:///usr/share/wallpapers/OnyxOS/contents/images/1920x1080.png");
@@ -529,14 +535,14 @@ Session=plasmawayland
 Relogin=false
 EOF
 
-# Remplacement des images Fedora par OnyxOS
+# Remplacement des images Fedora par OnyxOS (système, icônes, Anaconda WebUI, Cockpit)
 replace_image() {
     local file="$1" lower="${1,,}"
     case "$lower" in
-        *.png) install -m644 "$BASE_DIR/assets/onyxos-logo.png" "$file" ;;
-        *.svg) install -m644 "$BASE_DIR/assets/onyxos-logo.svg" "$file" ;;
+        *.png) install -m644 "$BASE_DIR/assets/onyxos-logo-transparent.png" "$file" ;;
+        *.svg) install -m644 "$BASE_DIR/assets/onyxos-logo-cube.svg" "$file" ;;
         *.ico)
-            python3 - "$BASE_DIR/assets/onyxos-logo.png" "$file" <<'PY'
+            python3 - "$BASE_DIR/assets/onyxos-logo-transparent.png" "$file" <<'PY'
 import sys
 from PIL import Image
 Image.open(sys.argv[1]).convert("RGBA").save(
@@ -553,8 +559,25 @@ PY
 while IFS= read -r -d '' image; do
     replace_image "$image"
 done < <(find "$ROOT_TREE/usr/share/pixmaps" "$ROOT_TREE/usr/share/icons" \
-              "$ROOT_TREE/usr/share/fedora-logos" -type f \
-              \( -iname '*fedora*' -o -iname 'org.fedoraproject.*' \) -print0 2>/dev/null)
+              "$ROOT_TREE/usr/share/fedora-logos" \
+              "$ROOT_TREE/usr/share/cockpit/branding/fedora" \
+              "$ROOT_TREE/usr/share/anaconda/webui" \
+              "$ROOT_TREE/usr/share/anaconda/pixmaps" -type f \
+              \( -iname '*fedora*' -o -iname 'org.fedoraproject.*' -o -iname '*logo*' \) -print0 2>/dev/null)
+
+# Remplacement explicite des logos Fedora dans Cockpit / Anaconda / Pixmaps
+for target_logo in \
+    "$ROOT_TREE/usr/share/cockpit/branding/fedora/logo.svg" \
+    "$ROOT_TREE/usr/share/cockpit/branding/fedora/favicon.svg" \
+    "$ROOT_TREE/usr/share/pixmaps/fedora-logo-small.png" \
+    "$ROOT_TREE/usr/share/pixmaps/fedora-logo.png" \
+    "$ROOT_TREE/usr/share/pixmaps/fedora-logo-sprite.png" \
+    "$ROOT_TREE/usr/share/pixmaps/fedora-logo-sprite.svg" \
+    "$ROOT_TREE/usr/share/pixmaps/system-logo-white.png"; do
+    if [[ -e "$target_logo" || -d "$(dirname "$target_logo")" ]]; then
+        replace_image "$target_logo"
+    fi
+done
 
 rm -rf "$ROOT_TREE/usr/share/plasma/look-and-feel/"org.fedoraproject.* 2>/dev/null || true
 rm -rf "$ROOT_TREE/usr/share/wallpapers/Fedora" 2>/dev/null || true
@@ -566,14 +589,30 @@ find "$ROOT_TREE/usr/share/konsole" -maxdepth 1 -iname '*fedora*' -delete 2>/dev
 find "$ROOT_TREE/usr/share/applications" -maxdepth 1 -iname '*fedora*' -delete 2>/dev/null || true
 rm -f "$ROOT_TREE/usr/share/applications/org.fedoraproject.MediaWriter.desktop" 2>/dev/null || true
 
-ok "Bureau KDE Plasma 6 v2.2 appliqué avec succès."
+ok "Bureau KDE Plasma 6 v2.3 appliqué avec succès."
 
 # ==============================================================================
-# 6. Plymouth boot splash
+# 6. Plymouth boot splash (démarrage + extinction sans logo Fedora)
 # ==============================================================================
 log "Étape 6/9 : splash Plymouth OnyxOS + initramfs"
 install -d "$ROOT_TREE/usr/share/plymouth/themes/onyxos" "$ROOT_TREE/etc/plymouth"
 cp -a "$BASE_DIR/assets/plymouth/onyxos/." "$ROOT_TREE/usr/share/plymouth/themes/onyxos/"
+install -m644 "$BASE_DIR/assets/onyxos-logo-transparent.png" \
+    "$ROOT_TREE/usr/share/plymouth/themes/onyxos/watermark.png"
+
+for pdir in spinner bgrt; do
+    if [[ -d "$ROOT_TREE/usr/share/plymouth/themes/$pdir" ]]; then
+        install -m644 "$BASE_DIR/assets/onyxos-logo-transparent.png" \
+            "$ROOT_TREE/usr/share/plymouth/themes/$pdir/watermark.png"
+        while IFS= read -r -d '' pimg; do
+            replace_image "$pimg"
+        done < <(find "$ROOT_TREE/usr/share/plymouth/themes/$pdir" -type f \
+            \( -iname '*fedora*' -o -iname '*logo*' -o -iname 'watermark*' \) -print0 2>/dev/null)
+    fi
+done
+install -Dm644 "$BASE_DIR/assets/onyxos-logo-transparent.png" \
+    "$ROOT_TREE/usr/share/pixmaps/system-logo-white.png"
+
 chown -R root:root "$ROOT_TREE/usr/share/plymouth/themes/onyxos"
 find "$ROOT_TREE/usr/share/plymouth/themes/onyxos" -type d -exec chmod 0755 {} +
 find "$ROOT_TREE/usr/share/plymouth/themes/onyxos" -type f -exec chmod 0644 {} +
@@ -589,9 +628,9 @@ EOF
 mount_chroot
 trap cleanup EXIT
 mkdir -p "$ROOT_TREE/var/tmp"
-chroot "$ROOT_TREE" /usr/bin/plymouth-set-default-theme onyxos 2>/dev/null || true
+chroot "$ROOT_TREE" /usr/bin/plymouth-set-default-theme onyxos
 
-# Initramfs
+# Initramfs (reconstruit après le changement de thème Plymouth pour l'extinction et le démarrage)
 cp -f "$ISO_TREE/boot/x86_64/loader/initrd" "$ROOT_TREE/var/tmp/onyxos-orig-initrd"
 chroot "$ROOT_TREE" /usr/bin/dracut -f --no-hostonly \
     --add "dmsquash-live plymouth systemd" \
@@ -600,7 +639,7 @@ chroot "$ROOT_TREE" /usr/bin/dracut -f --no-hostonly \
 install -m644 "$ROOT_TREE/var/tmp/onyxos-initramfs.img" "$ISO_TREE/boot/x86_64/loader/initrd"
 rm -f "$ROOT_TREE/var/tmp/onyxos-initramfs.img" "$ROOT_TREE/var/tmp/onyxos-orig-initrd"
 umount_chroot
-ok "Splash Plymouth embarqué."
+ok "Splash Plymouth embarqué (démarrage + extinction)."
 
 # ==============================================================================
 # 7. Mises à jour DNF5, Performances, RPM Fusion, Flathub, Sysctl & Sécurité
@@ -631,13 +670,31 @@ cat > "$ROOT_TREE/usr/local/bin/onyxos-rebrand-hook" <<'EOF'
 # Hook OnyxOS post-transaction DNF5
 [ -f /usr/lib/os-release ] && sed -i \
     -e 's/^NAME=.*/NAME="OnyxOS"/' \
-    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.2 (Obsidian Matte)"/' \
+    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.3 (Obsidian Matte)"/' \
     -e 's/^ID=.*/ID=onyxos/' \
-    -e 's/^VERSION=.*/VERSION="2.2"/' \
-    -e 's/^VERSION_ID=.*/VERSION_ID="2.2"/' \
+    -e 's/^VERSION=.*/VERSION="2.3"/' \
+    -e 's/^VERSION_ID=.*/VERSION_ID="2.3"/' \
     /usr/lib/os-release 2>/dev/null || true
 [ -L /etc/os-release ] || ln -sf ../usr/lib/os-release /etc/os-release 2>/dev/null || true
 [ -f /etc/hostname ] || echo "onyxos" > /etc/hostname
+
+# Réappliquer les logos OnyxOS si une mise à jour Fedora les a écrasés
+if [ -f /usr/share/pixmaps/onyxos-logo.png ]; then
+    cp -f /usr/share/pixmaps/onyxos-logo.png /usr/share/pixmaps/system-logo-white.png 2>/dev/null || true
+    cp -f /usr/share/pixmaps/onyxos-logo.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
+    cp -f /usr/share/pixmaps/onyxos-logo.png /usr/share/pixmaps/fedora-logo-small.png 2>/dev/null || true
+    for pdir in /usr/share/plymouth/themes/spinner /usr/share/plymouth/themes/bgrt; do
+        [ -d "$pdir" ] && cp -f /usr/share/pixmaps/onyxos-logo.png "$pdir/watermark.png" 2>/dev/null || true
+    done
+fi
+if [ -f /usr/share/pixmaps/onyxos-logo.svg ]; then
+    [ -d /usr/share/cockpit/branding/fedora ] && \
+        cp -f /usr/share/pixmaps/onyxos-logo.svg /usr/share/cockpit/branding/fedora/logo.svg 2>/dev/null || true
+    for fdir in /usr/share/anaconda/webui /usr/share/anaconda/pixmaps; do
+        [ -d "$fdir" ] && find "$fdir" -type f \( -iname '*fedora*' -o -iname '*logo*' \) -name '*.svg' \
+            -exec cp -f /usr/share/pixmaps/onyxos-logo.svg {} \; 2>/dev/null || true
+    done
+fi
 exit 0
 EOF
 chmod 0755 "$ROOT_TREE/usr/local/bin/onyxos-rebrand-hook"
@@ -663,7 +720,7 @@ chmod 0755 "$ROOT_TREE/usr/local/bin/onyxos-update"
 
 # --- Sysctl basse latence, jeux (vm.max_map_count) & réseau BBR ---
 cat > "$ROOT_TREE/etc/sysctl.d/99-onyxos-performance.conf" <<'EOF'
-# OnyxOS 2.2 — Performances jeux, mémoire basse latence et BBR
+# OnyxOS 2.3 — Performances jeux, mémoire basse latence et BBR
 vm.swappiness = 10
 vm.vfs_cache_pressure = 50
 vm.dirty_ratio = 10
@@ -714,28 +771,58 @@ done
 mkdir -p "$ROOT_TREE/etc/systemd/system/timers.target.wants"
 ln -sf /usr/lib/systemd/system/fstrim.timer "$ROOT_TREE/etc/systemd/system/timers.target.wants/fstrim.timer" 2>/dev/null || true
 
-# --- Paquets dans le chroot (RPM Fusion, codecs, outils, polices) ---
+# --- Paquets dans le chroot (RPM Fusion, codecs, Wine 32/64-bit, Papirus Violet, Timeshift) ---
 mount_chroot
 chroot "$ROOT_TREE" bash -c "
+    set -e
     dnf install -y --nogpgcheck --skip-broken \
         https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-45.noarch.rpm \
-        https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-45.noarch.rpm 2>/dev/null || true
+        https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-45.noarch.rpm || true
 
     dnf install -y --nogpgcheck --skip-broken \
         ffmpeg gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugins-ugly mesa-va-drivers \
-        wine winetricks gamemode mesa-vulkan-drivers \
+        gamemode mesa-vulkan-drivers \
+        papirus-icon-theme timeshift \
         inter-fonts google-noto-sans-fonts jetbrains-mono-fonts-all \
         ffmpegthumbs kdegraphics-thumbnailers \
         kde-connect spectacle ark p7zip p7zip-plugins unrar \
-        libdnf5-plugin-actions 2>/dev/null || true
+        libdnf5-plugin-actions
+
+    # Pile Wine complète 64-bit + 32-bit i686
+    dnf install -y --nogpgcheck \
+        wine wine-core.i686 wine-mono wine-gecko winetricks \
+        glibc.i686 libgcc.i686 libstdc++.i686 \
+        mesa-dri-drivers.i686 mesa-vulkan-drivers.i686 \
+        freetype.i686 gnutls.i686 pipewire-alsa.i686
+
+    # Teinte violette des dossiers Papirus-Dark
+    if [ -d /usr/share/icons/Papirus-Dark ]; then
+        curl -fsSL https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-folders/master/papirus-folders -o /tmp/papirus-folders
+        chmod +x /tmp/papirus-folders
+        /tmp/papirus-folders -C violet --theme Papirus-Dark || true
+        rm -f /tmp/papirus-folders
+    fi
 
     if command -v flatpak >/dev/null 2>&1; then
-        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
     fi
-" 2>/dev/null || warn "Téléchargement de certains paquets en ligne ignoré dans l'environnement de build."
+"
+
+# Vérification obligatoire de Wine dans le chroot
+test -x "$ROOT_TREE/usr/bin/winecfg" || die "winecfg introuvable après installation Wine."
+chroot "$ROOT_TREE" wine --version || die "Échec d'exécution de wine --version dans le chroot."
+ok "Wine 64-bit/32-bit vérifié avec succès."
 umount_chroot
 
-# --- Association MIME .exe pour Wine ---
+# --- Association MIME .exe & Menu Démarrer propre (Configuration Wine) ---
+if [[ -f "$ROOT_TREE/usr/share/applications/wine.desktop" ]]; then
+    if grep -q '^NoDisplay=' "$ROOT_TREE/usr/share/applications/wine.desktop"; then
+        sed -i 's/^NoDisplay=.*/NoDisplay=true/' "$ROOT_TREE/usr/share/applications/wine.desktop"
+    else
+        echo 'NoDisplay=true' >> "$ROOT_TREE/usr/share/applications/wine.desktop"
+    fi
+fi
+
 mkdir -p "$ROOT_TREE/usr/share/mime/packages"
 cat > "$ROOT_TREE/usr/share/mime/packages/wine-exe.xml" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -760,6 +847,19 @@ Exec=wine %f
 Icon=wine
 MimeType=application/x-ms-dos-executable;application/x-msdos-program;
 Categories=System;Emulator;
+NoDisplay=true
+EOF
+
+cat > "$ROOT_TREE/usr/share/applications/winecfg.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Wine Configuration
+Name[fr]=Configuration Wine
+Comment=Configure Wine Windows compatibility environment
+Comment[fr]=Configurer l'environnement Windows Wine
+Exec=winecfg
+Icon=wine
+Categories=System;Emulator;Settings;
 NoDisplay=false
 EOF
 
@@ -776,7 +876,7 @@ cat > "$FIREFOX_DEFAULTS/onyxos.js" <<'EOF'
 pref("browser.bookmarks.restore_default_bookmarks", false);
 pref("browser.bookmarks.addedImportButton", true);
 pref("distribution.id", "OnyxOS");
-pref("distribution.version", "2.2");
+pref("distribution.version", "2.3");
 pref("browser.newtabpage.activity-stream.feeds.topsites", false);
 pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 pref("browser.newtabpage.activity-stream.showSponsored", false);
@@ -845,7 +945,7 @@ GRUB_CONFIG="$ISO_TREE/boot/grub2/grub.cfg"
 
 sed -i \
     -e 's/^set default="1"/set default="0"/' \
-    -e 's/Fedora-KDE-Desktop-Live/OnyxOS 2.2 (Plasma Edition)/g' \
+    -e 's/Fedora-KDE-Desktop-Live/OnyxOS 2.3 (Plasma Edition)/g' \
     -e 's/Fedora-KDE-Live-45/ONYXOS_KDE_LIVE/g' \
     -e 's/--class fedora/--class onyxos/g' \
     "$GRUB_CONFIG"
@@ -902,7 +1002,7 @@ ok "ISO finale : $OUTPUT_ISO ($(du -h "$OUTPUT_ISO" | cut -f1))"
 ok "SHA256 : $(cut -d' ' -f1 "$OUTPUT_NAME.sha256")"
 
 printf '\n%b==========================================================%b\n' "$GREEN" "$RESET"
-printf '%b      ONYXOS 2.2 (PLASMA EDITION) EST PRÊTE             %b\n' "$GREEN" "$RESET"
+printf '%b      ONYXOS 2.3 (PLASMA EDITION) EST PRÊTE             %b\n' "$GREEN" "$RESET"
 printf '%b==========================================================%b\n' "$GREEN" "$RESET"
 
 umount_chroot

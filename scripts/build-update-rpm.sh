@@ -77,13 +77,30 @@ cat > "$PKG_SRCDIR/usr/local/bin/onyxos-rebrand-hook" <<'EOF'
 # Réapplique l'identité OnyxOS après une transaction DNF
 [ -f /usr/lib/os-release ] && sed -i \
     -e 's/^NAME=.*/NAME="OnyxOS"/' \
-    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.1 (Obsidian Matte)"/' \
+    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.3 (Obsidian Matte)"/' \
     -e 's/^ID=.*/ID=onyxos/' \
-    -e 's/^VERSION=.*/VERSION="2.1"/' \
-    -e 's/^VERSION_ID=.*/VERSION_ID="2.1"/' \
+    -e 's/^VERSION=.*/VERSION="2.3"/' \
+    -e 's/^VERSION_ID=.*/VERSION_ID="2.3"/' \
     /usr/lib/os-release 2>/dev/null || true
 [ -L /etc/os-release ] || ln -sf ../usr/lib/os-release /etc/os-release 2>/dev/null || true
 [ -f /etc/hostname ] || echo "onyxos" > /etc/hostname
+
+if [ -f /usr/share/pixmaps/onyxos-logo.png ]; then
+    cp -f /usr/share/pixmaps/onyxos-logo.png /usr/share/pixmaps/system-logo-white.png 2>/dev/null || true
+    cp -f /usr/share/pixmaps/onyxos-logo.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
+    cp -f /usr/share/pixmaps/onyxos-logo.png /usr/share/pixmaps/fedora-logo-small.png 2>/dev/null || true
+    for pdir in /usr/share/plymouth/themes/spinner /usr/share/plymouth/themes/bgrt; do
+        [ -d "$pdir" ] && cp -f /usr/share/pixmaps/onyxos-logo.png "$pdir/watermark.png" 2>/dev/null || true
+    done
+fi
+if [ -f /usr/share/pixmaps/onyxos-logo.svg ]; then
+    [ -d /usr/share/cockpit/branding/fedora ] && \
+        cp -f /usr/share/pixmaps/onyxos-logo.svg /usr/share/cockpit/branding/fedora/logo.svg 2>/dev/null || true
+    for fdir in /usr/share/anaconda/webui /usr/share/anaconda/pixmaps; do
+        [ -d "$fdir" ] && find "$fdir" -type f \( -iname '*fedora*' -o -iname '*logo*' \) -name '*.svg' \
+            -exec cp -f /usr/share/pixmaps/onyxos-logo.svg {} \; 2>/dev/null || true
+    done
+fi
 exit 0
 EOF
 chmod 0755 "$PKG_SRCDIR/usr/local/bin/onyxos-rebrand-hook"
@@ -101,7 +118,7 @@ Source0:    %{name}-%{version}.tar.gz
 BuildArch:  noarch
 
 %description
-Fournit la configuration officielle d'OnyxOS 2.1 :
+Fournit la configuration officielle d'OnyxOS ${PKG_VERSION} :
 - Configuration du dépôt DNF GitHub (gael66666.github.io/Onyxos/repo-updates)
 - Hook DNF5 transparent qui laisse passer 100%% des mises à jour Fedora
   et maintient l'identité OnyxOS intacte sans aucun blocage.

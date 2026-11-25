@@ -105,9 +105,9 @@ DecorationFocus=139,92,246
 DecorationHover=168,85,247
 
 [WM]
-activeBackground=11,10,16
+activeBackground=15,13,24
 activeBlend=139,92,246
 activeForeground=237,233,254
-inactiveBackground=21,19,32
-inactiveBlend=21,19,32
+inactiveBackground=11,10,16
+inactiveBlend=15,13,24
 inactiveForeground=148,163,184

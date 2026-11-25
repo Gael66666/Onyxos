@@ -146,42 +146,101 @@ def create_svg_logo(output_path: Path):
 # PNG Logo
 # ---------------------------------------------------------------------------
 
-def generate_logo_png(output_path: Path, size=512):
-    img = Image.new("RGBA", (size, size), COLOR_DEEP_BLACK + (255,))
+def create_cube_svg_logo(output_path: Path):
+    """Logo vectoriel cubique OnyxOS sur fond transparent (pour menu Demarrer, Plymouth, Anaconda)."""
+    svg = """<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="cubeTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C084FC"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="cubeLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#4C1D95"/>
+    </linearGradient>
+    <linearGradient id="cubeRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#EDE9FE" stroke-opacity="0.25" stroke-width="2" stroke-linejoin="round">
+    <!-- Top face -->
+    <polygon points="128,24 218,76 128,128 38,76" fill="url(#cubeTop)"/>
+    <!-- Left face -->
+    <polygon points="38,76 128,128 128,232 38,180" fill="url(#cubeLeft)"/>
+    <!-- Right face -->
+    <polygon points="218,76 218,180 128,232 128,128" fill="url(#cubeRight)"/>
+  </g>
+  <polygon points="128,62 184,95 184,161 128,194 72,161 72,95"
+           fill="none" stroke="#EDE9FE" stroke-opacity="0.35" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="128" cy="128" r="8" fill="#EDE9FE"/>
+</svg>
+"""
+    with open(output_path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(svg)
+    print(f"[OK] Cube SVG logo : {output_path}")
+
+def generate_transparent_logo_png(output_path: Path, size=256):
+    """Logo PNG transparent cubique OnyxOS (sans cadre noir, ideal Plymouth/Anaconda)."""
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    draw.rounded_rectangle([8, 8, size-8, size-8], radius=size//6, outline=COLOR_VIOLET_1, width=3)
-    render_gemstone(draw, size//2, int(size*0.44), int(size*0.28))
-    sub_y = int(size*0.80)
-    draw.line([size*0.25, sub_y, size*0.75, sub_y], fill=COLOR_VIOLET_1, width=2)
+    cx, cy = size // 2, size // 2
+    r = int(size * 0.40)
+    top = (cx, cy - r)
+    tr  = (cx + int(r * 0.866), cy - int(r * 0.5))
+    br  = (cx + int(r * 0.866), cy + int(r * 0.5))
+    bot = (cx, cy + r)
+    bl  = (cx - int(r * 0.866), cy + int(r * 0.5))
+    tl  = (cx - int(r * 0.866), cy - int(r * 0.5))
+    center = (cx, cy)
+
+    draw.polygon([top, tr, center, tl], fill=(168, 85, 247, 255))
+    draw.polygon([tl, center, bot, bl], fill=(91, 33, 182, 255))
+    draw.polygon([tr, br, bot, center], fill=(139, 92, 246, 255))
+
+    for edge in [(top, tr), (tr, br), (br, bot), (bot, bl), (bl, tl), (tl, top), (tl, center), (tr, center), (bot, center)]:
+        draw.line(edge, fill=(237, 233, 254, 110), width=max(2, size // 96))
+
+    dot_r = max(4, size // 32)
+    draw.ellipse([cx - dot_r, cy - dot_r, cx + dot_r, cy + dot_r], fill=(237, 233, 254, 240))
     img.save(output_path, "PNG")
-    print(f"[OK] PNG logo : {output_path}")
+    print(f"[OK] Transparent PNG logo : {output_path}")
+
+def generate_logo_png(output_path: Path, size=512):
+    generate_transparent_logo_png(output_path, size=size)
 
 # ---------------------------------------------------------------------------
-# Wallpaper (Net, Obsidian Matte, Zéro flou artificiel)
+# Wallpaper (Abstrait moderne minimaliste noir #09080F + degrade fluide violet)
 # ---------------------------------------------------------------------------
 
 def generate_wallpaper(output_path: Path, width=1920, height=1080):
-    print(f"[*] Wallpaper net {width}x{height}…")
-    img = Image.new("RGB", (width, height), COLOR_DEEP_BLACK)
-    draw = ImageDraw.Draw(img)
-    polygons = [
-        [(0, 0), (int(width*.35), 0), (int(width*.2), int(height*.45)), (0, int(height*.3))],
-        [(int(width*.35), 0), (width, 0), (int(width*.8), int(height*.5)), (int(width*.5), int(height*.2))],
-        [(width, int(height*.3)), (width, height), (int(width*.65), height), (int(width*.7), int(height*.6))],
-        [(0, int(height*.5)), (int(width*.25), int(height*.6)), (int(width*.15), height), (0, height)],
-        [(int(width*.2), height), (int(width*.7), height), (int(width*.5), int(height*.75))],
-    ]
-    for poly in polygons:
-        draw.polygon(poly, fill=COLOR_ANTHRACITE)
-    for poly in polygons:
-        for i in range(len(poly)):
-            draw.line([poly[i], poly[(i+1)%len(poly)]], fill=COLOR_SURFACE, width=2)
+    print(f"[*] Wallpaper abstrait moderne {width}x{height}…")
+    # Base noir profond #09080F (9, 8, 15)
+    base = Image.new("RGB", (width, height), (9, 8, 15))
+    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
 
-    cx, cy = width//2, height//2
-    # Logo gemme central net
-    render_gemstone(draw, cx, cy-20, int(min(width, height)*0.12))
-    img.save(output_path, "PNG", optimize=True)
-    print(f"[OK] Wallpaper net : {output_path}")
+    # Halo fluide violet electrique (#8B5CF6) en haut a droite et bas a gauche
+    blobs = [
+        (int(width * 0.78), int(height * 0.22), int(min(width, height) * 0.55), (139, 92, 246, 48)),
+        (int(width * 0.22), int(height * 0.78), int(min(width, height) * 0.60), (109, 40, 217, 42)),
+        (int(width * 0.52), int(height * 0.48), int(min(width, height) * 0.42), (168, 85, 247, 24)),
+    ]
+    for bx, by, br, color in blobs:
+        steps = 28
+        for s in range(steps, 0, -1):
+            frac = s / steps
+            rad = int(br * frac)
+            alpha = int(color[3] * (1.0 - frac) * 0.35)
+            if alpha > 0:
+                draw.ellipse([bx - rad, by - rad, bx + rad, by + rad], fill=(color[0], color[1], color[2], alpha))
+
+    # Lissage fluide et subtil
+    overlay = overlay.filter(ImageFilter.GaussianBlur(radius=max(32, width // 30)))
+    combined = Image.alpha_composite(base.convert("RGBA"), overlay).convert("RGB")
+    combined.save(output_path, "PNG", optimize=True)
+    print(f"[OK] Wallpaper moderne : {output_path}")
 
 # ---------------------------------------------------------------------------
 # Plymouth Splash (Net)
@@ -197,7 +256,7 @@ def generate_plymouth_watermark(output_path: Path):
     bbox = draw.textbbox((0, 0), text, font=font)
     draw.text((150, (height-(bbox[3]-bbox[1]))//2 - bbox[1]), text, font=font, fill=COLOR_TEXT_LIGHT)
     tw = bbox[2] - bbox[0]
-    draw.text((150+tw+12, height//2-12), "2.1", font=load_font(18), fill=COLOR_VIOLET_3)
+    draw.text((150+tw+12, height//2-12), "2.3", font=load_font(18), fill=COLOR_VIOLET_3)
     img.save(output_path, "PNG")
     print(f"[OK] Plymouth watermark : {output_path}")
 
@@ -515,11 +574,13 @@ def main():
         generate_onyxicons(ASSETS_DIR)
         return
 
-    print("=== OnyxOS Asset Pipeline v2.1 (Obsidian Matte, Sans Flou) ===")
+    print("=== OnyxOS Asset Pipeline v2.3 (Obsidian Matte) ===")
 
     # 1. Logos
     create_svg_logo(ASSETS_DIR / "onyxos-logo.svg")
+    create_cube_svg_logo(ASSETS_DIR / "onyxos-logo-cube.svg")
     generate_logo_png(ASSETS_DIR / "onyxos-logo.png", size=512)
+    generate_transparent_logo_png(ASSETS_DIR / "onyxos-logo-transparent.png", size=256)
 
     # 2. Wallpapers
     generate_wallpaper(ASSETS_DIR / "wallpaper-1920x1080.png", 1920, 1080)
@@ -538,7 +599,7 @@ def main():
     # 6. OnyxIcons
     generate_onyxicons(ASSETS_DIR)
 
-    print("=== Tous les assets OnyxOS v2.1 générés avec succès ===")
+    print("=== Tous les assets OnyxOS v2.3 générés avec succès ===")
 
 if __name__ == "__main__":
     main()

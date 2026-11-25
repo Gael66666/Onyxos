@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OnyxOS — Linux Desktop Rapide, Épuré &amp; Compatible Windows</title>
+  <meta name="description" content="OnyxOS (Plasma Edition) : système Linux basé sur Fedora 45, esthétique Obsidian Matte & Electric Violet, compatibilité native .exe Wine 32/64-bit, performances extrêmes et mises à jour sans blocage." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep: #09080F;
+      --bg-card: #110E1B;
+      --bg-card-hover: #171326;
+      --border: rgba(139, 92, 246, 0.22);
+      --border-strong: rgba(139, 92, 246, 0.55);
+      --violet: #8B5CF6;
+      --violet-bright: #A855F7;
+      --violet-soft: #C084FC;
+      --text: #EDE9FE;
+      --text-muted: #94A3B8;
+      --green: #10B981;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-deep);
+      background-image:
+        radial-gradient(ellipse 65% 45% at 80% 10%, rgba(139, 92, 246, 0.14), transparent 70%),
+        radial-gradient(ellipse 55% 45% at 15% 85%, rgba(109, 40, 217, 0.12), transparent 70%);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header / Nav */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(9, 8, 15, 0.88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 1.2rem;
+      letter-spacing: 0.04em;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 0.94rem;
+      color: var(--text-muted);
+    }
+    .nav-links a:hover { color: var(--text); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--violet), var(--violet-bright));
+      color: #fff;
+      box-shadow: 0 6px 24px rgba(139, 92, 246, 0.35);
+    }
+    .btn-outline {
+      background: var(--bg-card);
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+    .btn-outline:hover { background: var(--bg-card-hover); }
+
+    /* Hero */
+    .hero {
+      padding: 88px 0 64px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid var(--border-strong);
+      color: var(--violet-soft);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+    .hero-logo {
+      margin: 0 auto 24px;
+      width: 96px;
+      height: 96px;
+      display: block;
+      filter: drop-shadow(0 12px 30px rgba(139, 92, 246, 0.35));
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+      margin-bottom: 20px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #EDE9FE 20%, #8B5CF6 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      max-width: 680px;
+      margin: 0 auto 36px;
+      font-size: 1.12rem;
+      color: var(--text-muted);
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    /* Sections */
+    section { padding: 64px 0; }
+    .section-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 48px;
+    }
+    .section-header h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    .section-header p { color: var(--text-muted); }
+
+    /* Download Box */
+    .download-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+    .release-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .release-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+    .release-sub {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-top: 4px;
+    }
+    .assets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .asset-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      background: rgba(9, 8, 15, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .asset-item:hover {
+      border-color: var(--violet);
+      background: rgba(139, 92, 246, 0.08);
+    }
+    .asset-info {
+      min-width: 0;
+    }
+    .asset-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .asset-size {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .btn-dl {
+      padding: 8px 14px;
+      font-size: 0.84rem;
+      border-radius: 8px;
+      background: rgba(139, 92, 246, 0.18);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .btn-dl:hover {
+      background: var(--violet);
+      color: #fff;
+    }
+    .extract-note {
+      margin-top: 24px;
+      padding: 16px 20px;
+      border-radius: 10px;
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px solid var(--border);
+      font-size: 0.92rem;
+      color: var(--text-muted);
+    }
+    .extract-note strong { color: var(--text); }
+
+    /* Features Grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+      transition: border-color 0.18s ease, background 0.18s ease;
+    }
+    .card:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-card-hover);
+    }
+    .card-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid var(--border-strong);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 16px;
+      color: var(--violet-soft);
+    }
+    .card h3 {
+      font-size: 1.12rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .card p {
+      font-size: 0.94rem;
+      color: var(--text-muted);
+    }
+
+    /* Install Steps */
+    .step-num {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--violet-soft);
+      background: rgba(139, 92, 246, 0.15);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    pre.cmd {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.83rem;
+      color: var(--violet-soft);
+      overflow-x: auto;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 36px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    footer a { color: var(--violet-soft); }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 680px) {
+      .nav-links { display: none; }
+      .hero { padding: 56px 0 40px; }
+      .download-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a href="#" class="brand">
+        <svg width="32" height="32" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <polygon points="128,24 218,76 128,128 38,76" fill="#C084FC"/>
+          <polygon points="38,76 128,128 128,232 38,180" fill="#6D28D9"/>
+          <polygon points="218,76 218,180 128,232 128,128" fill="#8B5CF6"/>
+        </svg>
+        <span>ONYXOS</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#features">Fonctionnalités</a>
+        <a href="#download">Téléchargement</a>
+        <a href="#install">Installation</a>
+        <a href="https://github.com/Gael66666/Onyxos" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <a href="#download" class="btn btn-primary">Télécharger l'ISO</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="badge">
+          <span class="badge-dot"></span>
+          <span id="hero-version">OnyxOS Plasma Edition • Basé sur Fedora 45</span>
+        </div>
+
+        <svg class="hero-logo" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" aria-label="Logo OnyxOS">
+          <defs>
+            <linearGradient id="hTop" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#C084FC"/>
+              <stop offset="100%" stop-color="#8B5CF6"/>
+            </linearGradient>
+            <linearGradient id="hLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#7C3AED"/>
+              <stop offset="100%" stop-color="#4C1D95"/>
+            </linearGradient>
+            <linearGradient id="hRight" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#A855F7"/>
+              <stop offset="100%" stop-color="#6D28D9"/>
+            </linearGradient>
+          </defs>
+          <g stroke="#EDE9FE" stroke-opacity="0.28" stroke-width="2" stroke-linejoin="round">
+            <polygon points="128,24 218,76 128,128 38,76" fill="url(#hTop)"/>
+            <polygon points="38,76 128,128 128,232 38,180" fill="url(#hLeft)"/>
+            <polygon points="218,76 218,180 128,232 128,128" fill="url(#hRight)"/>
+          </g>
+          <circle cx="128" cy="128" r="8" fill="#EDE9FE"/>
+        </svg>
+
+        <h1>La puissance Linux, <span>épurée et sans compromis</span></h1>
+        <p>
+          OnyxOS combine la stabilité de Fedora 45 KDE Plasma 6 avec un design sombre Obsidian Matte,
+          une compatibilité native des programmes Windows <code>.exe</code> et des optimisations noyau basse latence.
+        </p>
+        <div class="hero-actions">
+          <a href="#download" class="btn btn-primary">Télécharger la dernière ISO</a>
+          <a href="https://github.com/Gael66666/Onyxos" target="_blank" rel="noopener" class="btn btn-outline">Voir sur GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="download">
+      <div class="container">
+        <div class="section-header">
+          <h2>Télécharger OnyxOS</h2>
+          <p>Détection automatique de la dernière version publiée sur GitHub Releases.</p>
+        </div>
+
+        <div class="download-card">
+          <div class="release-meta">
+            <div>
+              <div class="release-title" id="release-name">Chargement de la dernière release…</div>
+              <div class="release-sub" id="release-info">Connexion à l'API GitHub en cours</div>
+            </div>
+            <a href="https://github.com/Gael66666/Onyxos/releases/latest" target="_blank" rel="noopener" class="btn btn-outline">
+              Ouvrir sur GitHub Releases
+            </a>
+          </div>
+
+          <div id="assets-container" class="assets-grid">
+            <div class="asset-item">
+              <div class="asset-info">
+                <div class="asset-name">Récupération des fichiers…</div>
+                <div class="asset-size">Veuillez patienter</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="extract-note">
+            <strong>Archive multi-volumes (&lt; 2 Go par fichier) :</strong>
+            Téléchargez <strong>tous</strong> les fichiers listés ci-dessus (<code>.z01</code>, <code>.z02</code>…, <code>.zip</code>) dans le même dossier,
+            puis faites un clic droit sur le fichier <code>.zip</code> → <strong>7-Zip</strong> → <strong>Extraire ici</strong> pour reconstituer l'image <code>.iso</code>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="container">
+        <div class="section-header">
+          <h2>Pensé pour le quotidien &amp; la performance</h2>
+          <p>Chaque détail système est configuré dès le premier démarrage.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon">◆</div>
+            <h3>Obsidian Matte &amp; Sans Flou</h3>
+            <p>KDE Plasma 6 épuré avec barre unique moderne en bas, icônes <strong>Papirus-Dark Violet</strong>, fenêtres Breeze noires sans bordures et zéro flou KWin.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">⊞</div>
+            <h3>Compatibilité Windows (.exe)</h3>
+            <p>Pile <strong>Wine 64-bit &amp; 32-bit (i686)</strong> complète préinstallée avec Winetricks, Vulkan, Gamemode et lancement direct des fichiers <code>.exe</code>.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">⚡</div>
+            <h3>Performances Basse Latence</h3>
+            <p>Noyau <code>preempt=full</code>, compression <code>zram</code> en Zstd, congestion réseau TCP <strong>BBR</strong>, DNS chiffré Cloudflare/Quad9 et <code>vm.max_map_count</code> jeu.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">↻</div>
+            <h3>Mises à jour DNF5 sans blocage</h3>
+            <p>10 téléchargements simultanés et hook DNF5 automatique qui laisse passer 100 % des mises à jour Fedora tout en préservant l'identité OnyxOS.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">🛡</div>
+            <h3>Restauration Timeshift</h3>
+            <p><strong>Timeshift</strong> est prêt à l'emploi pour créer des instantanés système en un clic avant toute modification ou mise à jour majeure.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">⌨</div>
+            <h3>Raccourcis Productifs</h3>
+            <p><code>Meta+E</code> pour Dolphin, <code>Meta+V</code> pour l'historique presse-papiers, <code>Meta+Shift+S</code> pour la capture d'écran Spectacle et clavier AZERTY natif.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="container">
+        <div class="section-header">
+          <h2>Guide d'installation en 3 étapes</h2>
+          <p>Passez de l'archive téléchargée à votre bureau OnyxOS en quelques minutes.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <span class="step-num">ÉTAPE 01</span>
+            <h3>Reconstituer l'ISO</h3>
+            <p>Placez tous les volumes (<code>.z01</code>, <code>.z02</code>…, <code>.zip</code>) dans un même dossier et extrayez le fichier <code>.zip</code> avec <strong>7-Zip</strong> (Windows) ou via terminal (Linux) :</p>
+            <pre class="cmd">zip -s 0 OnyxOS-*.zip --out full.zip && unzip full.zip</pre>
+          </div>
+
+          <div class="card">
+            <span class="step-num">ÉTAPE 02</span>
+            <h3>Créer la clé USB</h3>
+            <p>Flashez l'image <code>.iso</code> sur une clé USB (8 Go minimum) avec <strong>Rufus</strong>, <strong>Ventoy</strong> ou <strong>BalenaEtcher</strong>, puis démarrez votre PC sur la clé.</p>
+          </div>
+
+          <div class="card">
+            <span class="step-num">ÉTAPE 03</span>
+            <h3>Mettre à jour</h3>
+            <p>Une fois installé, profitez de mises à jour ultra-rapides via <strong>KDE Discover</strong> ou en un mot dans Konsole :</p>
+            <pre class="cmd">onyxos-update</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>
+        OnyxOS (Plasma Edition) — Projet open-source basé sur Fedora 45 KDE.
+        <a href="https://github.com/Gael66666/Onyxos" target="_blank" rel="noopener">Dépôt GitHub</a> •
+        <a href="https://gael66666.github.io/Onyxos/repo-updates/" target="_blank" rel="noopener">Dépôt DNF</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const API_URL = "https://api.github.com/repos/Gael66666/Onyxos/releases/latest";
+      const RELEASES_FALLBACK = "https://github.com/Gael66666/Onyxos/releases/latest";
+
+      const releaseNameEl = document.getElementById("release-name");
+      const releaseInfoEl = document.getElementById("release-info");
+      const heroVersionEl = document.getElementById("hero-version");
+      const assetsContainer = document.getElementById("assets-container");
+
+      function formatSize(bytes) {
+        if (!bytes || bytes <= 0) return "Taille inconnue";
+        const gb = bytes / (1024 * 1024 * 1024);
+        if (gb >= 1) return gb.toFixed(2) + " Go";
+        const mb = bytes / (1024 * 1024);
+        if (mb >= 1) return mb.toFixed(1) + " Mo";
+        return (bytes / 1024).toFixed(0) + " Ko";
+      }
+
+      function sortAssets(assets) {
+        return assets.slice().sort((a, b) => {
+          const rank = (name) => {
+            if (name.endsWith(".zip")) return 0;
+            if (/\.z\d+$/i.test(name)) return 1;
+            if (name.endsWith(".sha256")) return 2;
+            return 3;
+          };
+          const ra = rank(a.name), rb = rank(b.name);
+          if (ra !== rb) return ra - rb;
+          return a.name.localeCompare(b.name);
+        });
+      }
+
+      fetch(API_URL)
+        .then((res) => {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+        .then((data) => {
+          const tag = data.tag_name || "latest";
+          const title = data.name || ("OnyxOS " + tag);
+          const published = data.published_at
+            ? new Date(data.published_at).toLocaleDateString("fr-FR", {
+                year: "numeric", month: "long", day: "numeric"
+              })
+            : "";
+
+          releaseNameEl.textContent = title;
+          releaseInfoEl.textContent = `Tag : ${tag}${published ? " • Publiée le " + published : ""}`;
+          heroVersionEl.textContent = `${title} • Basé sur Fedora 45`;
+
+          const assets = sortAssets(data.assets || []);
+          if (assets.length === 0) {
+            assetsContainer.innerHTML = `
+              <div class="asset-item">
+                <div class="asset-info">
+                  <div class="asset-name">Aucun fichier attaché à cette release</div>
+                  <div class="asset-size">Consultez GitHub Releases directement</div>
+                </div>
+                <a class="btn-dl" href="${RELEASES_FALLBACK}" target="_blank" rel="noopener">GitHub</a>
+              </div>`;
+            return;
+          }
+
+          assetsContainer.innerHTML = assets.map((asset) => `
+            <div class="asset-item">
+              <div class="asset-info">
+                <div class="asset-name" title="${asset.name}">${asset.name}</div>
+                <div class="asset-size">${formatSize(asset.size)}</div>
+              </div>
+              <a class="btn-dl" href="${asset.browser_download_url}" rel="noopener">Télécharger</a>
+            </div>
+          `).join("");
+        })
+        .catch(() => {
+          releaseNameEl.textContent = "OnyxOS Live ISO (Dernière Release)";
+          releaseInfoEl.textContent = "Impossible de joindre l'API GitHub automatiquement.";
+          assetsContainer.innerHTML = `
+            <div class="asset-item">
+              <div class="asset-info">
+                <div class="asset-name">Téléchargement via GitHub Releases</div>
+                <div class="asset-size">Accès direct aux archives multi-volumes</div>
+              </div>
+              <a class="btn-dl" href="${RELEASES_FALLBACK}" target="_blank" rel="noopener">Ouvrir</a>
+            </div>`;
+        });
+    })();
+  </script>
+</body>
+</html>
