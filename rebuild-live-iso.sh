@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# OnyxOS 2.4 (Plasma Edition) - Live ISO builder
+# OnyxOS 2.5 (Plasma Edition) - Live ISO builder
 #
-# Nouveautés v2.4 :
-#   * Correction syntaxe 5 champs du hook DNF5 (post_transaction::::/usr/local/bin/onyxos-rebrand-hook)
+# Nouveautés v2.5 :
+#   * Synchronisation multilib x86_64/i686 avant installation Wine 32-bit
+#   * Hook DNF5 5 champs (post_transaction::::/usr/local/bin/onyxos-rebrand-hook)
 #   * Barre unique moderne en bas (44 px, flottante), Papirus-Dark Violet, Breeze noir
 #   * Wine complet 64-bit + 32-bit i686 vérifié, Timeshift & logos Fedora supprimés
 # ==============================================================================
@@ -11,7 +12,7 @@ set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ISO="$BASE_DIR/Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso"
-OUTPUT_NAME="OnyxOS-2.4-live-x86_64.iso"
+OUTPUT_NAME="OnyxOS-2.5-live-x86_64.iso"
 OUTPUT_ISO="$BASE_DIR/$OUTPUT_NAME"
 BUILD_DIR="${ONYXOS_BUILD_DIR:-/var/tmp/onyxos-live-build}"
 ISO_TREE="$BUILD_DIR/iso"
@@ -148,22 +149,22 @@ KVER="$(ls -1 "$ROOT_TREE/lib/modules" 2>/dev/null | sort -V | tail -n1 || true)
 log "Noyau cible : $KVER"
 
 # ==============================================================================
-# 3. Identité système OnyxOS 2.4
+# 3. Identité système OnyxOS 2.5
 # ==============================================================================
-log "Étape 3/9 : identité système OnyxOS 2.4"
+log "Étape 3/9 : identité système OnyxOS 2.5"
 install -Dm644 "$BASE_DIR/config/os-release" "$ROOT_TREE/usr/lib/os-release"
 rm -f "$ROOT_TREE/etc/os-release"
 ln -s ../usr/lib/os-release "$ROOT_TREE/etc/os-release"
 
-printf 'OnyxOS release 2.4 (Obsidian)\n' > "$ROOT_TREE/etc/onyxos-release"
+printf 'OnyxOS release 2.5 (Obsidian)\n' > "$ROOT_TREE/etc/onyxos-release"
 rm -f "$ROOT_TREE/etc/fedora-release" "$ROOT_TREE/etc/system-release" \
       "$ROOT_TREE/etc/redhat-release" "$ROOT_TREE/usr/lib/fedora-release"
 ln -s onyxos-release "$ROOT_TREE/etc/system-release"
 ln -s onyxos-release "$ROOT_TREE/etc/redhat-release"
 
-printf 'OnyxOS 2.4 \\r (\\l)\n' > "$ROOT_TREE/etc/issue"
-printf 'OnyxOS 2.4 \\r (\\l)\n' > "$ROOT_TREE/etc/issue.net"
-printf 'Bienvenue sur OnyxOS 2.4 (Obsidian Matte & Electric Violet)\n' > "$ROOT_TREE/etc/motd"
+printf 'OnyxOS 2.5 \\r (\\l)\n' > "$ROOT_TREE/etc/issue"
+printf 'OnyxOS 2.5 \\r (\\l)\n' > "$ROOT_TREE/etc/issue.net"
+printf 'Bienvenue sur OnyxOS 2.5 (Obsidian Matte & Electric Violet)\n' > "$ROOT_TREE/etc/motd"
 find "$ROOT_TREE/etc/motd.d" -type f -delete 2>/dev/null || true
 printf 'onyxos\n' > "$ROOT_TREE/etc/hostname"
 install -Dm644 "$BASE_DIR/config/kcm-about-distrorc" "$ROOT_TREE/etc/xdg/kcm-about-distrorc"
@@ -177,7 +178,7 @@ rm -f "$ROOT_TREE"/etc/ssh/ssh_host_* 2>/dev/null || true
 
 sed -i 's/hostnamectl set-hostname "localhost-live"/hostnamectl set-hostname "onyxos"/' \
     "$ROOT_TREE/usr/libexec/livesys/livesys-main" 2>/dev/null || true
-ok "Identité système OnyxOS 2.4 appliquée."
+ok "Identité système OnyxOS 2.5 appliquée."
 
 # ==============================================================================
 # 4. Locale & clavier français
@@ -668,10 +669,10 @@ cat > "$ROOT_TREE/usr/local/bin/onyxos-rebrand-hook" <<'EOF'
 # Hook OnyxOS post-transaction DNF5
 [ -f /usr/lib/os-release ] && sed -i \
     -e 's/^NAME=.*/NAME="OnyxOS"/' \
-    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.4 (Obsidian Matte)"/' \
+    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.5 (Obsidian Matte)"/' \
     -e 's/^ID=.*/ID=onyxos/' \
-    -e 's/^VERSION=.*/VERSION="2.4"/' \
-    -e 's/^VERSION_ID=.*/VERSION_ID="2.4"/' \
+    -e 's/^VERSION=.*/VERSION="2.5"/' \
+    -e 's/^VERSION_ID=.*/VERSION_ID="2.5"/' \
     /usr/lib/os-release 2>/dev/null || true
 [ -L /etc/os-release ] || ln -sf ../usr/lib/os-release /etc/os-release 2>/dev/null || true
 [ -f /etc/hostname ] || echo "onyxos" > /etc/hostname
@@ -786,6 +787,10 @@ chroot "$ROOT_TREE" bash -c "
         kde-connect spectacle ark p7zip p7zip-plugins unrar \
         libdnf5-plugin-actions
 
+    # Synchronisation multilib x86_64 avant installation des paquets 32-bit i686
+    dnf upgrade -y --nogpgcheck --allowerasing --skip-unavailable \
+        glibc libgcc libstdc++ freetype gnutls mesa-dri-drivers mesa-vulkan-drivers pipewire-alsa
+
     # Pile Wine complète 64-bit + 32-bit i686
     dnf install -y --nogpgcheck --allowerasing --skip-unavailable \
         wine wine-core.i686 wine-mono wine-gecko winetricks \
@@ -874,7 +879,7 @@ cat > "$FIREFOX_DEFAULTS/onyxos.js" <<'EOF'
 pref("browser.bookmarks.restore_default_bookmarks", false);
 pref("browser.bookmarks.addedImportButton", true);
 pref("distribution.id", "OnyxOS");
-pref("distribution.version", "2.4");
+pref("distribution.version", "2.5");
 pref("browser.newtabpage.activity-stream.feeds.topsites", false);
 pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 pref("browser.newtabpage.activity-stream.showSponsored", false);
@@ -943,7 +948,7 @@ GRUB_CONFIG="$ISO_TREE/boot/grub2/grub.cfg"
 
 sed -i \
     -e 's/^set default="1"/set default="0"/' \
-    -e 's/Fedora-KDE-Desktop-Live/OnyxOS 2.4 (Plasma Edition)/g' \
+    -e 's/Fedora-KDE-Desktop-Live/OnyxOS 2.5 (Plasma Edition)/g' \
     -e 's/Fedora-KDE-Live-45/ONYXOS_KDE_LIVE/g' \
     -e 's/--class fedora/--class onyxos/g' \
     "$GRUB_CONFIG"
@@ -1000,7 +1005,7 @@ ok "ISO finale : $OUTPUT_ISO ($(du -h "$OUTPUT_ISO" | cut -f1))"
 ok "SHA256 : $(cut -d' ' -f1 "$OUTPUT_NAME.sha256")"
 
 printf '\n%b==========================================================%b\n' "$GREEN" "$RESET"
-printf '%b      ONYXOS 2.4 (PLASMA EDITION) EST PRÊTE             %b\n' "$GREEN" "$RESET"
+printf '%b      ONYXOS 2.5 (PLASMA EDITION) EST PRÊTE             %b\n' "$GREEN" "$RESET"
 printf '%b==========================================================%b\n' "$GREEN" "$RESET"
 
 umount_chroot

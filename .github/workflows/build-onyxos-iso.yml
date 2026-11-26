@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build-iso:
-    name: Build OnyxOS 2.4 Live ISO
+    name: Build OnyxOS 2.5 Live ISO
     runs-on: ubuntu-latest
 
     steps:
@@ -71,26 +71,26 @@ jobs:
           chmod 666 OnyxOS-*.iso* 2>/dev/null || true
           echo "Fichiers ISO générés :"
           ls -lh OnyxOS-*.iso*
-          cat OnyxOS-2.4-live-x86_64.iso.sha256
+          cat OnyxOS-2.5-live-x86_64.iso.sha256
 
       - name: Split ISO into multi-volume ZIP (< 2GB per part)
         run: |
           echo "Découpage de l'ISO en volumes ZIP de 1900 Mo (mode Store -0 instantané)..."
-          zip -0 -s 1900m OnyxOS-2.4-live-x86_64.zip OnyxOS-2.4-live-x86_64.iso
+          zip -0 -s 1900m OnyxOS-2.5-live-x86_64.zip OnyxOS-2.5-live-x86_64.iso
           echo "Volumes créés :"
-          ls -lh OnyxOS-2.4-live-x86_64.z* OnyxOS-2.4-live-x86_64.zip
+          ls -lh OnyxOS-2.5-live-x86_64.z* OnyxOS-2.5-live-x86_64.zip
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.4-latest
-          name: "OnyxOS 2.4 (Plasma Edition) Live ISO"
+          tag_name: v2.5-latest
+          name: "OnyxOS 2.5 (Plasma Edition) Live ISO"
           body: |
-            ## OnyxOS 2.4 (Plasma Edition) — Release Officielle Cloud
+            ## OnyxOS 2.5 (Plasma Edition) — Release Officielle Cloud
 
-            Bienvenue sur **OnyxOS 2.4** (Plasma Edition) ! Cette version apporte une refonte visuelle moderne (barre unique en bas, Papirus-Dark Violet, fenêtres Breeze noires sans bordures), une pile Wine 32/64-bit complète vérifiée, Timeshift et la suppression totale des logos Fedora jusque dans Plymouth et Anaconda.
+            Bienvenue sur **OnyxOS 2.5** (Plasma Edition) ! Cette version apporte une refonte visuelle moderne (barre unique en bas, Papirus-Dark Violet, fenêtres Breeze noires sans bordures), une pile Wine 32/64-bit complète vérifiée, Timeshift et la suppression totale des logos Fedora jusque dans Plymouth et Anaconda.
 
-            ### ✨ Nouveautés de la v2.4 :
+            ### ✨ Nouveautés de la v2.5 :
             - **Interface KDE Plasma 6 épurée** :
               - Barre unique moderne en bas (44 px, flottante) avec logo cubique OnyxOS, applications centrées et horloge à droite.
               - Pack d'icônes **Papirus-Dark** teinté en **violet** + fenêtres Breeze noires (`#0F0D18`) sans bordures latérales.
@@ -106,24 +106,24 @@ jobs:
 
             ### 📦 Téléchargement & Extraction de l'ISO :
             L'image ISO est découpée en volumes multi-parties `< 2 Go` :
-            - `OnyxOS-2.4-live-x86_64.z01`
-            - `OnyxOS-2.4-live-x86_64.zip`
+            - `OnyxOS-2.5-live-x86_64.z01`
+            - `OnyxOS-2.5-live-x86_64.zip`
 
             #### Sous Windows (avec 7-Zip ou WinRAR) :
             1. Téléchargez tous les fichiers `.z01` et `.zip` dans le **même dossier**.
-            2. Clic droit sur `OnyxOS-2.4-live-x86_64.zip` → **7-Zip** → **Extraire ici**.
-            3. Vous obtenez directement `OnyxOS-2.4-live-x86_64.iso`.
+            2. Clic droit sur `OnyxOS-2.5-live-x86_64.zip` → **7-Zip** → **Extraire ici**.
+            3. Vous obtenez directement `OnyxOS-2.5-live-x86_64.iso`.
 
             #### Sous Linux / macOS :
             ```bash
-            zip -s 0 OnyxOS-2.4-live-x86_64.zip --out OnyxOS-2.4-single.zip
-            unzip OnyxOS-2.4-single.zip
-            sha256sum -c OnyxOS-2.4-live-x86_64.iso.sha256
+            zip -s 0 OnyxOS-2.5-live-x86_64.zip --out OnyxOS-2.5-single.zip
+            unzip OnyxOS-2.5-single.zip
+            sha256sum -c OnyxOS-2.5-live-x86_64.iso.sha256
             ```
           files: |
-            OnyxOS-2.4-live-x86_64.zip
-            OnyxOS-2.4-live-x86_64.z*
-            OnyxOS-2.4-live-x86_64.iso.sha256
+            OnyxOS-2.5-live-x86_64.zip
+            OnyxOS-2.5-live-x86_64.z*
+            OnyxOS-2.5-live-x86_64.iso.sha256
           prerelease: false
           make_latest: true
         env:
