@@ -808,6 +808,18 @@ chroot "$ROOT_TREE" bash -c "
         alternatives --set wine /usr/bin/wine32 >/dev/null 2>&1 || ln -sf /usr/bin/wine32 /usr/bin/wine
     fi
 
+    cat > /usr/local/bin/onyxos-winecfg <<'WINECFG'
+#!/usr/bin/bash
+if [ -x /usr/bin/winecfg ]; then
+    exec /usr/bin/winecfg "$@"
+fi
+if [ -x /usr/bin/wine64 ]; then
+    exec /usr/bin/wine64 c:\\windows\\system32\\winecfg.exe "$@"
+fi
+exec /usr/bin/wine32 c:\\windows\\system32\\winecfg.exe "$@"
+WINECFG
+    chmod 0755 /usr/local/bin/onyxos-winecfg
+
     # Teinte violette des dossiers Papirus-Dark
     if [ -d /usr/share/icons/Papirus-Dark ]; then
         curl -fsSL https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-folders/master/papirus-folders -o /tmp/papirus-folders
@@ -824,7 +836,6 @@ chroot "$ROOT_TREE" bash -c "
 # Vérification obligatoire de Wine dans le chroot
 test -x "$ROOT_TREE/usr/bin/wine64" || test -x "$ROOT_TREE/usr/bin/wine32" \
     || die "Aucun binaire Wine 64-bit ou 32-bit introuvable après installation."
-test -x "$ROOT_TREE/usr/bin/winecfg" || die "winecfg introuvable après installation wine-common."
 chroot "$ROOT_TREE" rpm -q wine wine-core wine-common wine-desktop >/dev/null \
     || die "Paquets Wine Fedora incomplets ou incompatibles avec cette architecture."
 chroot "$ROOT_TREE" wine64 --version >/dev/null 2>&1 \
@@ -878,7 +889,7 @@ Name=Wine Configuration
 Name[fr]=Configuration Wine
 Comment=Configure Wine Windows compatibility environment
 Comment[fr]=Configurer l'environnement Windows Wine
-Exec=winecfg
+Exec=/usr/local/bin/onyxos-winecfg
 Icon=wine
 Categories=System;Emulator;Settings;
 NoDisplay=false
