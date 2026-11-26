@@ -77,10 +77,10 @@ cat > "$PKG_SRCDIR/usr/local/bin/onyxos-rebrand-hook" <<'EOF'
 # Réapplique l'identité OnyxOS après une transaction DNF
 [ -f /usr/lib/os-release ] && sed -i \
     -e 's/^NAME=.*/NAME="OnyxOS"/' \
-    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.6 (Obsidian Matte)"/' \
+    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.7 (Obsidian Matte)"/' \
     -e 's/^ID=.*/ID=onyxos/' \
-    -e 's/^VERSION=.*/VERSION="2.6"/' \
-    -e 's/^VERSION_ID=.*/VERSION_ID="2.6"/' \
+    -e 's/^VERSION=.*/VERSION="2.7"/' \
+    -e 's/^VERSION_ID=.*/VERSION_ID="2.7"/' \
     /usr/lib/os-release 2>/dev/null || true
 [ -L /etc/os-release ] || ln -sf ../usr/lib/os-release /etc/os-release 2>/dev/null || true
 [ -f /etc/hostname ] || echo "onyxos" > /etc/hostname

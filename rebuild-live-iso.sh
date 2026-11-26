@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# OnyxOS 2.6 (Plasma Edition) - Live ISO builder
+# OnyxOS 2.7 (Plasma Edition) - Live ISO builder
 #
-# Nouveautés v2.6 :
+# Nouveautés v2.7 :
 #   * Synchronisation multilib x86_64/i686 avant installation Wine 32-bit
 #   * Hook DNF5 5 champs (post_transaction::::/usr/local/bin/onyxos-rebrand-hook)
 #   * Barre unique moderne en bas (44 px, flottante), Papirus-Dark Violet, Breeze noir
@@ -12,7 +12,7 @@ set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ISO="$BASE_DIR/Fedora-KDE-Desktop-Live-45-1.4.x86_64.iso"
-OUTPUT_NAME="OnyxOS-2.6-live-x86_64.iso"
+OUTPUT_NAME="OnyxOS-2.7-live-x86_64.iso"
 OUTPUT_ISO="$BASE_DIR/$OUTPUT_NAME"
 BUILD_DIR="${ONYXOS_BUILD_DIR:-/var/tmp/onyxos-live-build}"
 ISO_TREE="$BUILD_DIR/iso"
@@ -149,22 +149,22 @@ KVER="$(ls -1 "$ROOT_TREE/lib/modules" 2>/dev/null | sort -V | tail -n1 || true)
 log "Noyau cible : $KVER"
 
 # ==============================================================================
-# 3. Identité système OnyxOS 2.6
+# 3. Identité système OnyxOS 2.7
 # ==============================================================================
-log "Étape 3/9 : identité système OnyxOS 2.6"
+log "Étape 3/9 : identité système OnyxOS 2.7"
 install -Dm644 "$BASE_DIR/config/os-release" "$ROOT_TREE/usr/lib/os-release"
 rm -f "$ROOT_TREE/etc/os-release"
 ln -s ../usr/lib/os-release "$ROOT_TREE/etc/os-release"
 
-printf 'OnyxOS release 2.6 (Obsidian)\n' > "$ROOT_TREE/etc/onyxos-release"
+printf 'OnyxOS release 2.7 (Obsidian)\n' > "$ROOT_TREE/etc/onyxos-release"
 rm -f "$ROOT_TREE/etc/fedora-release" "$ROOT_TREE/etc/system-release" \
       "$ROOT_TREE/etc/redhat-release" "$ROOT_TREE/usr/lib/fedora-release"
 ln -s onyxos-release "$ROOT_TREE/etc/system-release"
 ln -s onyxos-release "$ROOT_TREE/etc/redhat-release"
 
-printf 'OnyxOS 2.6 \\r (\\l)\n' > "$ROOT_TREE/etc/issue"
-printf 'OnyxOS 2.6 \\r (\\l)\n' > "$ROOT_TREE/etc/issue.net"
-printf 'Bienvenue sur OnyxOS 2.6 (Obsidian Matte & Electric Violet)\n' > "$ROOT_TREE/etc/motd"
+printf 'OnyxOS 2.7 \\r (\\l)\n' > "$ROOT_TREE/etc/issue"
+printf 'OnyxOS 2.7 \\r (\\l)\n' > "$ROOT_TREE/etc/issue.net"
+printf 'Bienvenue sur OnyxOS 2.7 (Obsidian Matte & Electric Violet)\n' > "$ROOT_TREE/etc/motd"
 find "$ROOT_TREE/etc/motd.d" -type f -delete 2>/dev/null || true
 printf 'onyxos\n' > "$ROOT_TREE/etc/hostname"
 install -Dm644 "$BASE_DIR/config/kcm-about-distrorc" "$ROOT_TREE/etc/xdg/kcm-about-distrorc"
@@ -178,7 +178,7 @@ rm -f "$ROOT_TREE"/etc/ssh/ssh_host_* 2>/dev/null || true
 
 sed -i 's/hostnamectl set-hostname "localhost-live"/hostnamectl set-hostname "onyxos"/' \
     "$ROOT_TREE/usr/libexec/livesys/livesys-main" 2>/dev/null || true
-ok "Identité système OnyxOS 2.6 appliquée."
+ok "Identité système OnyxOS 2.7 appliquée."
 
 # ==============================================================================
 # 4. Locale & clavier français
@@ -669,10 +669,10 @@ cat > "$ROOT_TREE/usr/local/bin/onyxos-rebrand-hook" <<'EOF'
 # Hook OnyxOS post-transaction DNF5
 [ -f /usr/lib/os-release ] && sed -i \
     -e 's/^NAME=.*/NAME="OnyxOS"/' \
-    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.6 (Obsidian Matte)"/' \
+    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.7 (Obsidian Matte)"/' \
     -e 's/^ID=.*/ID=onyxos/' \
-    -e 's/^VERSION=.*/VERSION="2.6"/' \
-    -e 's/^VERSION_ID=.*/VERSION_ID="2.6"/' \
+    -e 's/^VERSION=.*/VERSION="2.7"/' \
+    -e 's/^VERSION_ID=.*/VERSION_ID="2.7"/' \
     /usr/lib/os-release 2>/dev/null || true
 [ -L /etc/os-release ] || ln -sf ../usr/lib/os-release /etc/os-release 2>/dev/null || true
 [ -f /etc/hostname ] || echo "onyxos" > /etc/hostname
@@ -794,10 +794,19 @@ chroot "$ROOT_TREE" bash -c "
     # Pile Wine complète 64-bit + 32-bit i686
     dnf install -y --nogpgcheck --allowerasing --skip-unavailable \
         wine wine-core wine-common wine-desktop wine-core.i686 \
-        wine-mono wine-gecko winetricks \
+        wine-mono mingw32-wine-gecko mingw64-wine-gecko winetricks \
         glibc.i686 libgcc.i686 libstdc++.i686 \
         mesa-dri-drivers.i686 mesa-vulkan-drivers.i686 \
         freetype.i686 gnutls.i686 pipewire-alsa.i686
+
+    # Fedora 45 utilise wine32/wine64 comme alternatives pour /usr/bin/wine
+    if [ -x /usr/bin/wine64 ]; then
+        alternatives --install /usr/bin/wine wine /usr/bin/wine64 60 >/dev/null 2>&1 || true
+        alternatives --set wine /usr/bin/wine64 >/dev/null 2>&1 || ln -sf /usr/bin/wine64 /usr/bin/wine
+    elif [ -x /usr/bin/wine32 ]; then
+        alternatives --install /usr/bin/wine wine /usr/bin/wine32 50 >/dev/null 2>&1 || true
+        alternatives --set wine /usr/bin/wine32 >/dev/null 2>&1 || ln -sf /usr/bin/wine32 /usr/bin/wine
+    fi
 
     # Teinte violette des dossiers Papirus-Dark
     if [ -d /usr/share/icons/Papirus-Dark ]; then
@@ -813,11 +822,14 @@ chroot "$ROOT_TREE" bash -c "
 "
 
 # Vérification obligatoire de Wine dans le chroot
-test -x "$ROOT_TREE/usr/bin/wine" || die "wine introuvable après installation Wine."
+test -x "$ROOT_TREE/usr/bin/wine64" || test -x "$ROOT_TREE/usr/bin/wine32" \
+    || die "Aucun binaire Wine 64-bit ou 32-bit introuvable après installation."
 test -x "$ROOT_TREE/usr/bin/winecfg" || die "winecfg introuvable après installation wine-common."
 chroot "$ROOT_TREE" rpm -q wine wine-core wine-common wine-desktop >/dev/null \
     || die "Paquets Wine Fedora incomplets ou incompatibles avec cette architecture."
-chroot "$ROOT_TREE" wine --version >/dev/null || die "Échec d'exécution de wine --version dans le chroot."
+chroot "$ROOT_TREE" wine64 --version >/dev/null 2>&1 \
+    || chroot "$ROOT_TREE" wine32 --version >/dev/null \
+    || die "Échec d'exécution des binaires Wine 64-bit/32-bit dans le chroot."
 chroot "$ROOT_TREE" rpm -q wine-core.i686 >/dev/null 2>&1 \
     || die "Composants Wine 32-bit i686 introuvables après installation."
 ok "Wine 64-bit/32-bit vérifié avec succès."
@@ -885,7 +897,7 @@ cat > "$FIREFOX_DEFAULTS/onyxos.js" <<'EOF'
 pref("browser.bookmarks.restore_default_bookmarks", false);
 pref("browser.bookmarks.addedImportButton", true);
 pref("distribution.id", "OnyxOS");
-pref("distribution.version", "2.6");
+pref("distribution.version", "2.7");
 pref("browser.newtabpage.activity-stream.feeds.topsites", false);
 pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 pref("browser.newtabpage.activity-stream.showSponsored", false);
@@ -954,7 +966,7 @@ GRUB_CONFIG="$ISO_TREE/boot/grub2/grub.cfg"
 
 sed -i \
     -e 's/^set default="1"/set default="0"/' \
-    -e 's/Fedora-KDE-Desktop-Live/OnyxOS 2.6 (Plasma Edition)/g' \
+    -e 's/Fedora-KDE-Desktop-Live/OnyxOS 2.7 (Plasma Edition)/g' \
     -e 's/Fedora-KDE-Live-45/ONYXOS_KDE_LIVE/g' \
     -e 's/--class fedora/--class onyxos/g' \
     "$GRUB_CONFIG"
@@ -1011,7 +1023,7 @@ ok "ISO finale : $OUTPUT_ISO ($(du -h "$OUTPUT_ISO" | cut -f1))"
 ok "SHA256 : $(cut -d' ' -f1 "$OUTPUT_NAME.sha256")"
 
 printf '\n%b==========================================================%b\n' "$GREEN" "$RESET"
-printf '%b      ONYXOS 2.6 (PLASMA EDITION) EST PRÊTE             %b\n' "$GREEN" "$RESET"
+printf '%b      ONYXOS 2.7 (PLASMA EDITION) EST PRÊTE             %b\n' "$GREEN" "$RESET"
 printf '%b==========================================================%b\n' "$GREEN" "$RESET"
 
 umount_chroot
