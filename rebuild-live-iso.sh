@@ -775,21 +775,21 @@ ln -sf /usr/lib/systemd/system/fstrim.timer "$ROOT_TREE/etc/systemd/system/timer
 mount_chroot
 chroot "$ROOT_TREE" bash -c "
     set -e
-    dnf install -y --nogpgcheck --skip-broken \
+    dnf install -y --nogpgcheck --skip-unavailable \
         https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-45.noarch.rpm \
         https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-45.noarch.rpm || true
 
-    dnf install -y --nogpgcheck --skip-broken \
+    dnf install -y --nogpgcheck --allowerasing --skip-unavailable \
         ffmpeg gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugins-ugly mesa-va-drivers \
         gamemode mesa-vulkan-drivers \
         papirus-icon-theme timeshift \
-        inter-fonts google-noto-sans-fonts jetbrains-mono-fonts-all \
+        rsms-inter-fonts google-noto-sans-fonts jetbrains-mono-fonts-all \
         ffmpegthumbs kdegraphics-thumbnailers \
         kde-connect spectacle ark p7zip p7zip-plugins unrar \
         libdnf5-plugin-actions
 
     # Pile Wine complète 64-bit + 32-bit i686
-    dnf install -y --nogpgcheck \
+    dnf install -y --nogpgcheck --allowerasing --skip-unavailable \
         wine wine-core.i686 wine-mono wine-gecko winetricks \
         glibc.i686 libgcc.i686 libstdc++.i686 \
         mesa-dri-drivers.i686 mesa-vulkan-drivers.i686 \

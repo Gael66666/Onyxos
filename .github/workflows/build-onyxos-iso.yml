@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - 'README.md'
+      - 'index.html'
       - 'repo-updates/**'
   workflow_dispatch:
 
@@ -14,7 +15,7 @@ permissions:
 
 jobs:
   build-iso:
-    name: Build OnyxOS 2.2 Live ISO
+    name: Build OnyxOS 2.3 Live ISO
     runs-on: ubuntu-latest
 
     steps:
@@ -70,68 +71,59 @@ jobs:
           chmod 666 OnyxOS-*.iso* 2>/dev/null || true
           echo "Fichiers ISO générés :"
           ls -lh OnyxOS-*.iso*
-          cat OnyxOS-2.2-live-x86_64.iso.sha256
+          cat OnyxOS-2.3-live-x86_64.iso.sha256
 
       - name: Split ISO into multi-volume ZIP (< 2GB per part)
         run: |
           echo "Découpage de l'ISO en volumes ZIP de 1900 Mo (mode Store -0 instantané)..."
-          zip -0 -s 1900m OnyxOS-2.2-live-x86_64.zip OnyxOS-2.2-live-x86_64.iso
+          zip -0 -s 1900m OnyxOS-2.3-live-x86_64.zip OnyxOS-2.3-live-x86_64.iso
           echo "Volumes créés :"
-          ls -lh OnyxOS-2.2-live-x86_64.z* OnyxOS-2.2-live-x86_64.zip
+          ls -lh OnyxOS-2.3-live-x86_64.z* OnyxOS-2.3-live-x86_64.zip
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.2-latest
-          name: "OnyxOS 2.2 (Plasma Edition) Live ISO"
+          tag_name: v2.3-latest
+          name: "OnyxOS 2.3 (Plasma Edition) Live ISO"
           body: |
-            ## OnyxOS 2.2 (Plasma Edition) — Release Officielle Cloud
+            ## OnyxOS 2.3 (Plasma Edition) — Release Officielle Cloud
 
-            Bienvenue sur **OnyxOS 2.2** (Plasma Edition) ! Cette version apporte une refonte visuelle complète sans aucun flou ("Obsidian Matte & Electric Violet"), des performances de pointe, des mises à jour DNF ultra-rapides sans freeze et une prise en charge multimédia/jeux complète.
+            Bienvenue sur **OnyxOS 2.3** (Plasma Edition) ! Cette version apporte une refonte visuelle moderne (barre unique en bas, Papirus-Dark Violet, fenêtres Breeze noires sans bordures), une pile Wine 32/64-bit complète vérifiée, Timeshift et la suppression totale des logos Fedora jusque dans Plymouth et Anaconda.
 
-            ### ✨ Nouveautés de la v2.2 :
-            - **Design KDE Plasma 6 "Obsidian Matte" (ZÉRO FLOU)** :
-              - Fenêtres épurées sans bordures latérales via `OnyxAurorae`.
-              - Thème Plasma SVG `OnyxTheme` noir profond mat (`#0F0D18`) opaque à 95 % avec fine bordure violette `#8B5CF6`.
-              - Barre supérieure 28 px flottante & dock centré 62 px flottant avec lanceurs épinglés.
-              - Konsole noir mat `#0D0B14` sans flou avec police `JetBrains Mono`.
-              - Flou KWin entièrement désactivé pour un rendu ultra-net et réactif.
-            - **Mises à jour DNF ultra-rapides & Zéro Freeze** :
-              - 10 téléchargements simultanés (`max_parallel_downloads=10`, `fastestmirror=True`).
-              - Hook DNF5 transparent qui laisse passer 100 % des mises à jour Fedora sans conflit de paquets.
-              - Raccourci `onyxos-update` (`sudo dnf upgrade --refresh -y`).
-            - **Correction et Fiabilité du Build Cloud** :
-              - Démontage EROFS FUSE robuste et nettoyage sécurisé de l'espace temporaire de build (résolution du code d'erreur `Function not implemented`).
-            - **Multimédia & Jeux clés en main** :
-              - Dépôts RPM Fusion Free & Nonfree activés avec codecs complets (`ffmpeg`, GStreamer, VA-API).
-              - Flathub préconfiguré pour KDE Discover.
-              - Wine, Winetricks, Gamemode, Vulkan et association automatique `.exe`.
-            - **Système, Sécurité & Vie Privée** :
-              - Noyau basse latence `preempt=full`, swap zram en `zstd`, `vm.max_map_count=2147483642`, congestion TCP BBR.
-              - DNS Cloudflare/Quad9 dans `systemd-resolved`, `fstrim.timer` activé et télémétrie Firefox désactivée.
+            ### ✨ Nouveautés de la v2.3 :
+            - **Interface KDE Plasma 6 épurée** :
+              - Barre unique moderne en bas (44 px, flottante) avec logo cubique OnyxOS, applications centrées et horloge à droite.
+              - Pack d'icônes **Papirus-Dark** teinté en **violet** + fenêtres Breeze noires (`#0F0D18`) sans bordures latérales.
+              - Fond d'écran abstrait minimaliste noir/violet et raccourcis `Meta+E`, `Meta+V`, `Meta+Shift+S`.
+            - **Compatibilité Windows & Sécurité** :
+              - Pile **Wine 64-bit + 32-bit (i686)** complète et vérifiée dans le chroot + entrée **Configuration Wine**.
+              - **Timeshift** préinstallé pour les instantanés système en 1 clic.
+              - Suppression complète des logos Fedora dans Plymouth (boot & extinction), Cockpit et Anaconda WebUI.
+            - **Mises à jour DNF5 sans blocage & Multimédia** :
+              - `ffmpeg` RPM Fusion, GStreamer, VA-API, `max_parallel_downloads=10`, hook DNF5 transparent et `onyxos-update`.
 
             ---
 
             ### 📦 Téléchargement & Extraction de l'ISO :
             L'image ISO est découpée en volumes multi-parties `< 2 Go` :
-            - `OnyxOS-2.2-live-x86_64.z01`
-            - `OnyxOS-2.2-live-x86_64.zip`
+            - `OnyxOS-2.3-live-x86_64.z01`
+            - `OnyxOS-2.3-live-x86_64.zip`
 
             #### Sous Windows (avec 7-Zip ou WinRAR) :
             1. Téléchargez tous les fichiers `.z01` et `.zip` dans le **même dossier**.
-            2. Clic droit sur `OnyxOS-2.2-live-x86_64.zip` → **7-Zip** → **Extraire ici**.
-            3. Vous obtenez directement `OnyxOS-2.2-live-x86_64.iso`.
+            2. Clic droit sur `OnyxOS-2.3-live-x86_64.zip` → **7-Zip** → **Extraire ici**.
+            3. Vous obtenez directement `OnyxOS-2.3-live-x86_64.iso`.
 
             #### Sous Linux / macOS :
             ```bash
-            zip -s 0 OnyxOS-2.2-live-x86_64.zip --out OnyxOS-2.2-single.zip
-            unzip OnyxOS-2.2-single.zip
-            sha256sum -c OnyxOS-2.2-live-x86_64.iso.sha256
+            zip -s 0 OnyxOS-2.3-live-x86_64.zip --out OnyxOS-2.3-single.zip
+            unzip OnyxOS-2.3-single.zip
+            sha256sum -c OnyxOS-2.3-live-x86_64.iso.sha256
             ```
           files: |
-            OnyxOS-2.2-live-x86_64.zip
-            OnyxOS-2.2-live-x86_64.z*
-            OnyxOS-2.2-live-x86_64.iso.sha256
+            OnyxOS-2.3-live-x86_64.zip
+            OnyxOS-2.3-live-x86_64.z*
+            OnyxOS-2.3-live-x86_64.iso.sha256
           prerelease: false
           make_latest: true
         env:
