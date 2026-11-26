@@ -68,7 +68,7 @@ EOF
 # 2. Hook DNF5 automatique (libdnf5-plugin-actions)
 cat > "$PKG_SRCDIR/etc/dnf/libdnf5-plugins/actions.d/onyxos-rebrand.actions" <<'EOF'
 # Réapplique l'identité OnyxOS après toute mise à jour sans rien bloquer
-post_trans:any:/usr/local/bin/onyxos-rebrand-hook
+post_transaction::::/usr/local/bin/onyxos-rebrand-hook
 EOF
 
 # 3. Script de réapplication d'identité
@@ -77,10 +77,10 @@ cat > "$PKG_SRCDIR/usr/local/bin/onyxos-rebrand-hook" <<'EOF'
 # Réapplique l'identité OnyxOS après une transaction DNF
 [ -f /usr/lib/os-release ] && sed -i \
     -e 's/^NAME=.*/NAME="OnyxOS"/' \
-    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.3 (Obsidian Matte)"/' \
+    -e 's/^PRETTY_NAME=.*/PRETTY_NAME="OnyxOS 2.4 (Obsidian Matte)"/' \
     -e 's/^ID=.*/ID=onyxos/' \
-    -e 's/^VERSION=.*/VERSION="2.3"/' \
-    -e 's/^VERSION_ID=.*/VERSION_ID="2.3"/' \
+    -e 's/^VERSION=.*/VERSION="2.4"/' \
+    -e 's/^VERSION_ID=.*/VERSION_ID="2.4"/' \
     /usr/lib/os-release 2>/dev/null || true
 [ -L /etc/os-release ] || ln -sf ../usr/lib/os-release /etc/os-release 2>/dev/null || true
 [ -f /etc/hostname ] || echo "onyxos" > /etc/hostname
